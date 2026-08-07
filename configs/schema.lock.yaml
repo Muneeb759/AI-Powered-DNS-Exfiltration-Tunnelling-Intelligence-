@@ -1,0 +1,44 @@
+version: "1.0"
+dataset: "CIC-Bell-DNS-EXF-2021"
+track: "Track 1 - Stateless-Only Detection"
+decision_unit: "row-level (individual DNS query)"
+
+canonical_columns:
+  unit_id: "unit_id"
+  session_id: "session_id"
+  collection_day: "collection_day"
+  label: "label"
+  attack_category: "attack_category"
+
+label_encoding:
+  0: "benign"
+  1: "exfiltration"
+
+attack_categories:
+  - "benign"
+  - "light"
+  - "heavy"
+
+excluded_days:
+  - "2020-11-25" # 0 benign rows, single-class slice
+
+stateless_features:
+  - sl_fqdn_count
+  - sl_subdomain_length
+  - sl_upper
+  - sl_lower
+  - sl_numeric
+  - sl_entropy
+  - sl_special
+  - sl_labels
+  - sl_labels_max
+  - sl_labels_average
+  - sl_len
+  - sl_subdomain_flag
+  - sl_longest_word_len
+  - sl_numeric_ratio
+
+shortcut_exclusions:
+  timestamp: "Temporal shortcut - leaks collection day"
+  sld: "Raw registrable domain / IP octet / NetBIOS identity shortcut"
+  longest_word: "Raw string token shortcut"

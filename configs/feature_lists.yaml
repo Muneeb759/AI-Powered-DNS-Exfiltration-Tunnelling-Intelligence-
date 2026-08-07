@@ -1,0 +1,16 @@
+stateless:
+  - sl_fqdn_count
+  - sl_subdomain_length
+  - sl_upper
+  - sl_lower
+  - sl_numeric
+  - sl_entropy
+  - sl_special
+  - sl_labels
+  - sl_labels_max
+  - sl_labels_average
+  - sl_len
+  - sl_subdomain_flag
+  - sl_longest_word_len
+  - sl_numeric_ratio
+stateful: []

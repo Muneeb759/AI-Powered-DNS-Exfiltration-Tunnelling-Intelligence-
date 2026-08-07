@@ -1,0 +1,193 @@
+{
+  "release_type": "public_unb_release",
+  "has_split_manifest": false,
+  "has_published_checksums": false,
+  "has_data_dictionary": false,
+  "has_pcaps": false,
+  "total_files": 36,
+  "total_bytes": 103384358,
+  "expected_archive_sha256": null,
+  "checksum_matched": true,
+  "files": [
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_audio.pcap.csv",
+      "size_bytes": 1231111,
+      "sha256": "9c13f538795c1ba6685ba2b7b51f317f70d69af4582bbf2ceb921ee93f86a079"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_compressed.pcap.csv",
+      "size_bytes": 1198696,
+      "sha256": "90ec5a181cd7bd811333393375a21eb56434d175ee4fefef9578c9974a496508"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_exe.pcap.csv",
+      "size_bytes": 1148904,
+      "sha256": "70e2c56adf830f8dd92fa5ff034befcd4af6f30b13f627d4212765b563ce244e"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_image.pcap.csv",
+      "size_bytes": 1268620,
+      "sha256": "6ebb10582930d1578b6e0cc5b036f65cbf103d942c2d34be0b42381c6c7b7cb7"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_text.pcap.csv",
+      "size_bytes": 2194696,
+      "sha256": "520a04b45ae3374688b23bfd12f0d48c1d99e757a2406e9bc6df540ecc6d81b9"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateful_features-heavy_video.pcap.csv",
+      "size_bytes": 1255262,
+      "sha256": "7e75b8960c967de543a08a7f81d32b51435482342349a906230365bccecb59de"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv",
+      "size_bytes": 3352264,
+      "sha256": "279a2d10a3487e7f9367b989aff6778f2b7423cfbf6d935f4227708433b11da4"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_compressed.pcap.csv",
+      "size_bytes": 3349029,
+      "sha256": "d79a62e8bb9d3f98a3f53c582ac54aec16e0fa693498628aba48c3af21b1ccbe"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_exe.pcap.csv",
+      "size_bytes": 3245322,
+      "sha256": "f3dca67d2945af044a5d13f3ac77bc9faddd44efc077dd930bed0d59459e4e28"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_image.pcap.csv",
+      "size_bytes": 3408762,
+      "sha256": "2d07886fc65d53b1db16d2986785b14883750abc8f8ee5f6424303a2cb1a8170"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_text.pcap.csv",
+      "size_bytes": 6660380,
+      "sha256": "e17d891042923bc143e787854e91847f2f952b37cdf5189b7c567550e458e3cd"
+    },
+    {
+      "path": "Attack_heavy_Benign/Attacks/stateless_features-heavy_video.pcap.csv",
+      "size_bytes": 3562821,
+      "sha256": "6f4c573dc3d761b313d380e15f9445433571da82c56df78ef7288d6611c80386"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateful_features-benign_heavy_1.pcap.csv",
+      "size_bytes": 3134139,
+      "sha256": "e0684860689bebd96a353cc8c15a7cc63629784b72efad5e361a19f6103b6e04"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateful_features-benign_heavy_2.pcap.csv",
+      "size_bytes": 2637980,
+      "sha256": "6641371dab3d0b566560914ff8ee9b0da4a71e9399d4705288c1f1ccfd92307a"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateful_features-benign_heavy_3.pcap.csv",
+      "size_bytes": 3646140,
+      "sha256": "35a4e5813c564eff73e0fd98d97461d592db049f1b4478f6113f245d87a280b3"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv",
+      "size_bytes": 5613254,
+      "sha256": "1efe8d6060601f623a31b627a43197749cf7365ef41eedb935558f50eeafa03f"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_2.pcap.csv",
+      "size_bytes": 4482079,
+      "sha256": "5df43f29e34ba092dcdadc05528487bb87e17e8c0177b92bbf591e6fa3543e40"
+    },
+    {
+      "path": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_3.pcap.csv",
+      "size_bytes": 6498787,
+      "sha256": "97ef08ade940caa74e5519a472d10f3fcd7082e02963c88c894565f1aa3c9f07"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_audio.pcap.csv",
+      "size_bytes": 498122,
+      "sha256": "139db1a2bbc3d8c8968c44ada8dbdca65e84e1457d6ad49d375c2785e016be99"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_compressed.pcap.csv",
+      "size_bytes": 335031,
+      "sha256": "8942c043a4752c98e73854b50fb8507f674ffda77a78037d959ec6ae2ecd1f05"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_exe.pcap.csv",
+      "size_bytes": 211824,
+      "sha256": "ad1cb141164b9c66c6283c0bf81f68550fd77b3e7268d88be00ecb7bffc41fa3"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_image.pcap.csv",
+      "size_bytes": 16905,
+      "sha256": "437e716bc653718fdf57c2ae40b618630f5a43ed8ed8eeaf534bac6b207dbd90"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_text.pcap.csv",
+      "size_bytes": 107167,
+      "sha256": "850df1cadc595a9d64933724c9e64fc954c553ee63d02cb86cdf2a7e4b2c9ac9"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateful_features-light_video.pcap.csv",
+      "size_bytes": 143719,
+      "sha256": "ab052ec8fedac67bb79bd061a1ced89d2aacbb96da43fc59262d908e9d20f4f4"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_audio.pcap.csv",
+      "size_bytes": 1651653,
+      "sha256": "c25312264237da728016b602768f9a5d70ceff366ab596f2a5717eb341ee47e1"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_compressed.pcap.csv",
+      "size_bytes": 959649,
+      "sha256": "d7d3d53763a4e101841eb683869d7080a4913621cf708304b5c6f0013f48bd41"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_exe.pcap.csv",
+      "size_bytes": 604616,
+      "sha256": "898f53ac2c84101f22affd06626f9ed9ce1f64c7c549f442eb75b3451fcc2546"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_image.pcap.csv",
+      "size_bytes": 49473,
+      "sha256": "4065e0226817695bb214aee63247ec0fea8c3f8a9b42c203ccb2f725f56c7664"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_text.pcap.csv",
+      "size_bytes": 326065,
+      "sha256": "869edc5b2d38bca3b496a22a106303cc5a474d0e0ed5c764c56de9ce7ea900fe"
+    },
+    {
+      "path": "Attack_Light_Benign/Attacks/stateless_features-light_video.pcap.csv",
+      "size_bytes": 409839,
+      "sha256": "44a7eeb28fad026b891d7fbb87662316a6f0f77c6eb0f6fc1868d8373c64a269"
+    },
+    {
+      "path": "Attack_Light_Benign/Benign/stateful_features-_light_benign.pcap.csv",
+      "size_bytes": 3121432,
+      "sha256": "10b6a92795ac6fff2e23cafd9677533bdc612ed4e8a5fdf8f26f07a187a635b4"
+    },
+    {
+      "path": "Attack_Light_Benign/Benign/stateless_features-light_benign.pcap.csv",
+      "size_bytes": 5479863,
+      "sha256": "e2ad947a2eb39410f24b323128b3cf48e22c1235c1354551bf6f3d5dd80b4de1"
+    },
+    {
+      "path": "Benign/stateful_features-benign_1.pcap.csv",
+      "size_bytes": 6832328,
+      "sha256": "cd3abcf55d1fd314397f9e30187febc83bda748395f805d30bb1d57b55097e25"
+    },
+    {
+      "path": "Benign/stateful_features-benign_2.pcap.csv",
+      "size_bytes": 4699171,
+      "sha256": "5ba60d1966e719c8d4325bd0ccd58daff61b0da9e3d66cd9708ff2ae150084e3"
+    },
+    {
+      "path": "Benign/stateless_features-benign_1.pcap.csv",
+      "size_bytes": 11976043,
+      "sha256": "9ad517d114d6d240bbb5070515c3ac697e0c397744ec8b781a664f81839a4ed1"
+    },
+    {
+      "path": "Benign/stateless_features-benign_2.pcap.csv",
+      "size_bytes": 8073212,
+      "sha256": "22ce845cc61e9d4ba742052068a1a77677599f54990c19f3bc08ec7b5f632af6"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "seed": 20260808,
+  "split_type": "capture_file_grouped_split",
+  "gated_model": {
+    "features_count": 14,
+    "features": [
+      "sl_fqdn_count",
+      "sl_subdomain_length",
+      "sl_upper",
+      "sl_lower",
+      "sl_numeric",
+      "sl_entropy",
+      "sl_special",
+      "sl_labels",
+      "sl_labels_max",
+      "sl_labels_average",
+      "sl_len",
+      "sl_subdomain_flag",
+      "sl_longest_word_len",
+      "sl_numeric_ratio"
+    ],
+    "pr_auc": 0.6264588998056886,
+    "roc_auc": 0.8098639578659821
+  },
+  "shortcut_model": {
+    "features_count": 18,
+    "features": [
+      "sl_fqdn_count",
+      "sl_subdomain_length",
+      "sl_upper",
+      "sl_lower",
+      "sl_numeric",
+      "sl_entropy",
+      "sl_special",
+      "sl_labels",
+      "sl_labels_max",
+      "sl_labels_average",
+      "sl_len",
+      "sl_subdomain_flag",
+      "sl_longest_word_len",
+      "sl_numeric_ratio",
+      "sc_sld",
+      "sc_longest_word",
+      "sc_day",
+      "sc_session"
+    ],
+    "pr_auc": 0.6928073331033084,
+    "roc_auc": 0.5452095798541803
+  },
+  "interpretation": "Comparing Gated (PR-AUC: 0.6265) vs Shortcut-Included (PR-AUC: 0.6928) models. Including raw metadata identity shortcuts (sld, longest_word, session_id, day) inflates PR-AUC to near-perfect levels, proving why strict feature gating is mandatory to prevent trace identity leakage."
+}

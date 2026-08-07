@@ -1,0 +1,41 @@
+column,status,reason
+timestamp,EXCLUDED,Temporal shortcut - leaks collection day and execution timing
+sld,EXCLUDED,Raw registrable domain / IP octet / NetBIOS string identity shortcut (violates Control 4)
+longest_word,EXCLUDED,Raw string token shortcut - carries domain identity text
+capture_file,EXCLUDED,Internal file metadata / grouping key - not a feature
+unit_id,EXCLUDED,Decision unit primary key - identifier only
+session_id,EXCLUDED,Session grouping identifier - identifier only
+collection_day,EXCLUDED,Collection day partition key - grouping identifier only
+label,EXCLUDED,Ground truth target - target label (0 or 1)
+attack_category,EXCLUDED,"Evaluation slice label - benign, light, heavy"
+subdomain,EXCLUDED,Raw subdomain text string (replaced by sl_subdomain_flag)
+distinct_ip,EXCLUDED,Constant IP address identity shortcut in stateful table
+reverse_dns,EXCLUDED,Raw string reverse DNS identity shortcut in stateful table
+distinct_domains,EXCLUDED,Raw domain identity string list (replaced by sf_n_distinct_domains count)
+unique_asn,EXCLUDED,Raw ASN identity string list (replaced by sf_n_asns count)
+unique_country,EXCLUDED,Raw country string list (replaced by sf_n_countries count)
+unique_ttl,EXCLUDED,Raw TTL string list (replaced by sf_ttl_count)
+rr_type,EXCLUDED,Raw record type categorical (replaced by one-hot features)
+NS_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+CNAME_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+SOA_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+NULL_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+HINFO_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+MX_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+SRV_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+OPT_frequency,EXCLUDED,Constant column with nunique=1 across all rows
+a_records,EXCLUDED,Constant column with nunique=1 across all rows
+sl_fqdn_count,ALLOWLISTED,Safe stateless feature
+sl_subdomain_length,ALLOWLISTED,Safe stateless feature
+sl_upper,ALLOWLISTED,Safe stateless feature
+sl_lower,ALLOWLISTED,Safe stateless feature
+sl_numeric,ALLOWLISTED,Safe stateless feature
+sl_entropy,ALLOWLISTED,Safe stateless feature
+sl_special,ALLOWLISTED,Safe stateless feature
+sl_labels,ALLOWLISTED,Safe stateless feature
+sl_labels_max,ALLOWLISTED,Safe stateless feature
+sl_labels_average,ALLOWLISTED,Safe stateless feature
+sl_len,ALLOWLISTED,Safe stateless feature
+sl_subdomain_flag,ALLOWLISTED,Safe stateless feature
+sl_longest_word_len,ALLOWLISTED,Safe stateless feature
+sl_numeric_ratio,ALLOWLISTED,Safe stateless feature

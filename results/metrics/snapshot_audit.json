@@ -1,0 +1,127 @@
+{
+  "dataset_release": "public_unb_release",
+  "has_organizer_split_manifest": false,
+  "has_published_sha256": false,
+  "stateless_file_count": 18,
+  "stateful_file_count": 18,
+  "stateless_total_rows": 757211,
+  "stateful_total_rows": 262105,
+  "join_analysis": {
+    "row_level_join_exists": false,
+    "join_level": "capture_file_level",
+    "stateless_raw_header": "timestamp,FQDN_count,subdomain_length,upper,lower,numeric,entropy,special,labels,labels_max,labels_average,longest_word,sld,len,subdomain",
+    "stateful_raw_header": "rr,A_frequency,NS_frequency,CNAME_frequency,SOA_frequency,NULL_frequency,PTR_frequency,HINFO_frequency,MX_frequency,TXT_frequency,AAAA_frequency,SRV_frequency,OPT_frequency,rr_type,rr_count,rr_name_entropy,rr_name_length,distinct_ns,distinct_ip,unique_country,unique_asn,distinct_domains,reverse_dns,a_records,unique_ttl,ttl_mean,ttl_variance"
+  },
+  "session_definitions": {
+    "rule_A_capture_file": {
+      "total_sessions": 18,
+      "positive_sessions": 12,
+      "light_sessions": 6,
+      "heavy_sessions": 6,
+      "benign_sessions": 6
+    },
+    "rule_B_capture_file_sld": {
+      "total_sessions": 83178,
+      "positive_sessions": 230,
+      "light_sessions": 92,
+      "heavy_sessions": 138,
+      "benign_sessions": 82948
+    }
+  },
+  "collection_days_reconciliation": {
+    "total_calendar_days": 6,
+    "calendar_days": [
+      "2020-11-20",
+      "2020-11-21",
+      "2020-11-22",
+      "2020-11-23",
+      "2020-11-24",
+      "2020-11-25"
+    ],
+    "benign_eligible_days": [
+      "2020-11-20",
+      "2020-11-21",
+      "2020-11-22",
+      "2020-11-23",
+      "2020-11-24"
+    ],
+    "ineligible_single_class_days": [
+      "2020-11-25"
+    ]
+  },
+  "positive_rows_per_day": {
+    "2020-11-20": {
+      "light": 0,
+      "heavy": 0,
+      "total": 0
+    },
+    "2020-11-21": {
+      "light": 28694,
+      "heavy": 0,
+      "total": 28694
+    },
+    "2020-11-22": {
+      "light": 13989,
+      "heavy": 55542,
+      "total": 69531
+    },
+    "2020-11-23": {
+      "light": 0,
+      "heavy": 49945,
+      "total": 49945
+    },
+    "2020-11-24": {
+      "light": 0,
+      "heavy": 115782,
+      "total": 115782
+    },
+    "2020-11-25": {
+      "light": 0,
+      "heavy": 30401,
+      "total": 30401
+    }
+  },
+  "min_resolvable_fpr_session_rule_A": {
+    "2020-11-20": {
+      "benign_sessions": 2,
+      "min_fpr": 0.5
+    },
+    "2020-11-21": {
+      "benign_sessions": 2,
+      "min_fpr": 0.5
+    },
+    "2020-11-22": {
+      "benign_sessions": 1,
+      "min_fpr": 1.0
+    },
+    "2020-11-23": {
+      "benign_sessions": 1,
+      "min_fpr": 1.0
+    },
+    "2020-11-24": {
+      "benign_sessions": 1,
+      "min_fpr": 1.0
+    }
+  },
+  "constant_columns_dropped": [
+    "NS_frequency",
+    "CNAME_frequency",
+    "SOA_frequency",
+    "NULL_frequency",
+    "HINFO_frequency",
+    "MX_frequency",
+    "SRV_frequency",
+    "OPT_frequency",
+    "a_records",
+    "distinct_ip"
+  ],
+  "corrections_applied": {
+    "C1": "subdomain flag kept as sl_subdomain_flag feature",
+    "C2": "distinct_domains & unique_asn raw strings excluded",
+    "C3": "string set/dict reprs converted to numeric cardinality counts",
+    "C4": "derived features added (sl_longest_word_len, sf_reverse_dns_known)",
+    "C5": "10 constant columns dropped",
+    "C6": "calendar day count (6) vs benign day count (5) reconciled",
+    "C7": "2020-11-25 marked INELIGIBLE as held-out test day"
+  }
+}

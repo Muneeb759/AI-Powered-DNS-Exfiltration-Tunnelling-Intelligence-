@@ -1,0 +1,23 @@
+# Data directories & files (DO NOT COMMIT PER RULE 4 & 5)
+data/raw/
+data/splits/
+dataset/
+*.parquet
+*.pcap
+*.pcapng
+
+# Python / Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+ENV/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

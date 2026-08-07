@@ -1,0 +1,93 @@
+{
+  "split_type": "capture_file_grouped_split",
+  "split_status": "PROVISIONAL",
+  "release_type": "public_unb_release",
+  "seed": 20260808,
+  "partitions": {
+    "train": {
+      "total_rows": 405851,
+      "collection_days": [
+        "2020-11-20",
+        "2020-11-21",
+        "2020-11-22",
+        "2020-11-24"
+      ],
+      "capture_files": [
+        "Attack_Light_Benign/Attacks/stateless_features-light_exe.pcap.csv::2020-11-21",
+        "Attack_Light_Benign/Attacks/stateless_features-light_exe.pcap.csv::2020-11-22",
+        "Attack_Light_Benign/Attacks/stateless_features-light_image.pcap.csv::2020-11-22",
+        "Attack_Light_Benign/Attacks/stateless_features-light_video.pcap.csv::2020-11-22",
+        "Attack_Light_Benign/Benign/stateless_features-light_benign.pcap.csv::2020-11-21",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_exe.pcap.csv::2020-11-24",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_text.pcap.csv::2020-11-24",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_video.pcap.csv::2020-11-24",
+        "Benign/stateless_features-benign_1.pcap.csv::2020-11-20",
+        "Benign/stateless_features-benign_2.pcap.csv::2020-11-20",
+        "Benign/stateless_features-benign_2.pcap.csv::2020-11-21"
+      ],
+      "benign_rows": 281164,
+      "positive_rows": 124687,
+      "light_positive_rows": 11345,
+      "heavy_positive_rows": 113342,
+      "positive_rate": 0.30722358698142915,
+      "min_fpr_floor": 3.556643097978404e-06
+    },
+    "val_cal": {
+      "total_rows": 95102,
+      "collection_days": [
+        "2020-11-21",
+        "2020-11-22",
+        "2020-11-23"
+      ],
+      "capture_files": [
+        "Attack_Light_Benign/Attacks/stateless_features-light_compressed.pcap.csv::2020-11-21",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_compressed.pcap.csv::2020-11-22",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_compressed.pcap.csv::2020-11-23",
+        "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_2.pcap.csv::2020-11-23"
+      ],
+      "benign_rows": 49115,
+      "positive_rows": 45987,
+      "light_positive_rows": 10241,
+      "heavy_positive_rows": 35746,
+      "positive_rate": 0.4835544993796135,
+      "min_fpr_floor": 2.0360378703043877e-05
+    },
+    "val_thr": {
+      "total_rows": 125016,
+      "collection_days": [
+        "2020-11-21",
+        "2020-11-23",
+        "2020-11-24"
+      ],
+      "capture_files": [
+        "Attack_Light_Benign/Attacks/stateless_features-light_audio.pcap.csv::2020-11-21",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_image.pcap.csv::2020-11-23",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_image.pcap.csv::2020-11-24",
+        "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_3.pcap.csv::2020-11-24"
+      ],
+      "benign_rows": 71012,
+      "positive_rows": 54004,
+      "light_positive_rows": 17618,
+      "heavy_positive_rows": 36386,
+      "positive_rate": 0.43197670698150636,
+      "min_fpr_floor": 1.4082126964456711e-05
+    },
+    "test": {
+      "total_rows": 100841,
+      "collection_days": [
+        "2020-11-22"
+      ],
+      "capture_files": [
+        "Attack_Light_Benign/Attacks/stateless_features-light_text.pcap.csv::2020-11-22",
+        "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv::2020-11-22",
+        "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22"
+      ],
+      "benign_rows": 61567,
+      "positive_rows": 39274,
+      "light_positive_rows": 3479,
+      "heavy_positive_rows": 35795,
+      "positive_rate": 0.3894646026913656,
+      "min_fpr_floor": 1.6242467555671058e-05
+    }
+  }
+}
