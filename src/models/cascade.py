@@ -39,6 +39,7 @@ if str(project_root) not in sys.path:
 from src.data.load import load_split, get_schema_lock
 from src.eval.metrics import point_metrics, ranking_metrics
 from src.features.stateful_context import build_stateful_context, STATEFUL_CONTEXT_FEATURES
+from src.features.stateless_engineered import build_engineered_features
 
 # Escalation trigger uses the paper's own "suspicious" score band lower bound (>= 0.4), NOT the
 # FPR=0.1% alert threshold. Those are different questions: the alert threshold asks "is this one
@@ -115,16 +116,15 @@ def _score_stage1(df: pd.DataFrame, model, features: list) -> pd.DataFrame:
 
 
 def run_cascade() -> dict:
-    schema = get_schema_lock()
-    features = schema["stateless_features"]
-
     bundle = joblib.load("models/stateless_lgbm.pkl")
     model = bundle["model"]
+    # Use feature list stored in bundle -- picks up engineered features automatically.
+    features = bundle.get("features") or get_schema_lock()["stateless_features"]
     stage1_threshold = json.load(open("models/stateless_threshold.json"))["threshold"]
 
-    train = _score_stage1(load_split("train"), model, features)
-    val_thr = _score_stage1(load_split("val_thr"), model, features)
-    test = _score_stage1(load_split("test"), model, features)
+    train = _score_stage1(build_engineered_features(load_split("train")), model, features)
+    val_thr = _score_stage1(build_engineered_features(load_split("val_thr")), model, features)
+    test = _score_stage1(build_engineered_features(load_split("test")), model, features)
 
     context_by_token = _build_token_indexed_context()
 

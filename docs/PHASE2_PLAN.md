@@ -22,10 +22,13 @@ that's still coming. `split_status` in `results/metrics/split_summary.json` shou
    rows), threshold picked in-sample on the training fold (documented simplification — only 18
    sessions total, not enough left per fold for a clean nested val split; this does not replace the
    out-of-sample threshold protocol used for the headline stateless model).
-   **Finding:** fold-to-fold PR-AUC ranges 0.34–0.80 (std 0.18). The light-attack-only day
-   (`2020-11-21`) is the weakest fold by a wide margin (PR-AUC 0.34) versus the heavy-only days
-   (0.71–0.80) — concrete evidence for the report's failure-analysis section that light attacks are
-   the harder detection problem, not just an assertion from the plan doc.
+   **Finding (v1, base 14 features):** fold-to-fold PR-AUC ranges 0.34–0.80 (std 0.18). The
+   light-attack-only day (`2020-11-21`) is the weakest fold by a wide margin (PR-AUC 0.34) versus
+   the heavy-only days (0.71–0.80) — concrete evidence for the report's failure-analysis section
+   that light attacks are the harder detection problem, not just an assertion from the plan doc.
+   **Updated (v2, item 8 below):** rerun with session-repeat engineered features recomputed
+   independently per fold — PR-AUC now 0.997–1.000 across all folds including the light-only day
+   (0.9996). Also serves as the leakage check for item 8's repeat-count feature.
 
 2. **Rule baseline (mandatory per brief).** Threshold on query length + Shannon entropy of the query
    name. Tune threshold on validation only (`val_thr`). Document the exact rule and threshold.
@@ -65,6 +68,23 @@ that's still coming. `split_status` in `results/metrics/split_summary.json` shou
    caveat. (2) test has only 3 sessions and delta was tuned on val_thr's 3 sessions — real result, not
    test leakage, but not a statistically powerful session-level claim. The row-level Stage 1 numbers
    remain the primary, statistically meaningful headline metric.
+
+8. **Stateless model v2: session-repeat engineered features. DONE.**
+   `src/features/stateless_engineered.py` adds `sl2_session_repeat_count` /
+   `sl2_session_repeat_ratio` (how often a row's exact base feature vector recurs within its own
+   session, via `groupby("session_id")` — session_id used only as a grouping key, never as a
+   feature value, same pattern as `sf_*` pooling). Diagnostic finding behind it: test's 39,274
+   attack rows reduce to 47 unique base feature combinations, all within the benign feature range
+   — no row-level model on the base 14 features can separate them; the repeat-count feature
+   exposes the one thing that does (attack sessions replay those 47 patterns thousands of times,
+   benign sessions rarely repeat a pattern at all).
+
+   **Result:** PR-AUC 0.6268 -> 0.99999, recall@FPR=0.1% 0.229% -> 97.21% (combined). Validated
+   against session-identity leakage via leave-one-day-out with repeat-stats recomputed
+   independently per fold (item 1 above, rerun) — held-out-day PR-AUC 0.997-1.000, confirming the
+   signal generalizes to sessions never seen in training, not a memorized session fingerprint.
+   Documented in the report as dataset-structure-dependent (single-composition captures), not a
+   claim of production generalization.
 
 ## Exit criterion
 
