@@ -188,12 +188,40 @@ recall.** The model's advantage is concentrated in *ranking quality* (PR-AUC 0.5
 combined; 0.091 → 0.128 on light attacks), not at that operating point. We report this rather than
 selecting a comparison that flatters the model.
 
-The model's practical advantages over the fixed rule are: (a) a continuous, calibrated score that
-supports alert *ranking* and triage prioritization, where the rule provides a single hard cut;
-(b) reason codes per alert (§12) tied to 14 features rather than 2; and (c) a usable operating-point
-curve (§7) that lets a defender trade FPR for recall — including the 47% recall point the rule
-cannot reach at any threshold. Those are real, but they are workflow advantages, not a large
-detection-quality gap, and we are not claiming otherwise.
+**Where the model is genuinely ahead, measured rather than asserted:** ranking quality across the
+whole score range (ROC-AUC 0.810 vs 0.700; PR-AUC 0.627 vs 0.523), and recall at a comparable
+operating point — at ~18% test FPR the model reaches 47.1% recall / 62.6% precision versus the
+rule's 41.1% / 59.9%. That is a real 6-point recall advantage at equal FPR, not a decisive one.
+
+**Alert ranking — the claim, tested** (`src/eval/ranking_quality.py`,
+`results/metrics/ranking_quality_v1.json`). §7's flat ~62.6% precision across every threshold from
+4% to 28% FPR implies a constant likelihood ratio, which would mean the score enriches by a fixed
+factor but does not *rank* within the flagged pool. We tested this with tie-respecting
+precision-at-depth (naive precision@k is invalid here — 22,763 test rows share one score, so a
+fixed *k* slices a tie block arbitrarily; naive precision@1000 computes to 0.949 purely as a
+row-order artifact and is not reported):
+
+| Depth (tie-respecting) | Cumulative precision | Lift over base rate (0.3895) |
+|---|---|---|
+| top 48 | 91.7% | 2.35× |
+| top 100 | 74.0% | 1.90× |
+| top 141 | 63.8% | 1.64× |
+| top 1,592 | 62.7% | 1.61× |
+| top 6,770 | 62.6% | 1.61× |
+| top 46,056 | 62.7% | 1.61× |
+
+**The ranking claim survives only in a narrow form, and we state it that way.** The score does
+prioritize the extreme head of the queue — an analyst working the top 50 alerts sees ~92%
+precision, the top 100 ~74% — but by depth ~141 (of 100,841 rows) precision has already collapsed
+to the flat ~62.6% asymptote and provides no further discrimination. So the model meaningfully
+reduces analyst workload for roughly the first 100–140 alerts and not beyond. That is a real but
+strictly bounded advantage over the rule's single hard cut, and it is the honest version of Track
+1's *"alert ranking that reduces analyst workload"* criterion. See §9 (Experiment 4) for why the
+ranking dies where it does.
+
+The model's remaining practical advantage is per-alert reason codes (§12) tied to 14 features
+rather than 2. These are workflow advantages plus a modest detection-quality gap, and we are not
+claiming more.
 
 ## 7. Stateless model (Stage 1 headline, v1)
 
@@ -248,8 +276,10 @@ bands.
 
 **Calibration** (Track 1 criterion: *"calibrated confidence and an explicit operating threshold"*).
 Isotonic regression fit on `val_cal` only. Brier score on `test`: **raw 0.14976 → isotonic
-0.14855** (a real but small improvement — the raw LightGBM score is already reasonably calibrated
-here). Full 10-bin reliability tables for both are in
+0.14855** — a real but very small improvement, and the likely reason is the quantization described
+immediately above rather than the raw score already being well calibrated: with only 4,289 distinct
+score values and enormous tie blocks, isotonic regression has very few distinct points to fit
+against and little room to redistribute probability mass. Full 10-bin reliability tables for both are in
 `results/metrics/operating_points_v1.json:calibration`. **Calibrated probabilities are what the
 analyst UI displays and what alert ranking uses; the raw score drives the operating threshold**,
 because isotonic's step-function output collapses benign scores into a handful of plateaus far too
@@ -385,6 +415,22 @@ label is "contains any attack row," which on single-composition captures is near
 the capture's own label. The mixed-traffic stress test is the direct confirmation: recall collapses
 to 0% (tuned setting) or partially survives at 18.2% (looser setting) once attack traffic is
 diluted into a realistic stream, exactly mirroring Experiment 1's collapse.
+
+**Experiment 4 — the feature space itself supports coarse separation, not fine ranking.** This one
+is not about session composition; it is the other half of why the numbers look the way they do,
+and it unifies three otherwise-unrelated observations. Below the top ~141 rows, the model's
+precision is *constant* at ~62.6% across every operating point from 4% to 28% FPR (§6b) — a fixed
+likelihood ratio of ~1.61, meaning the flagged pool has the same attack/benign mixture no matter
+where the threshold sits. The same limitation shows up as: (a) heavy score quantization — 71,012
+benign rows collapse into 4,289 distinct scores, leaving a 15-point FPR band unreachable at any
+threshold (§7); (b) light and heavy recall nearly identical at every operating point (10.64% vs
+10.80%, 46.22% vs 47.14%), because both categories land in the same coarse score bands; and (c)
+PR-AUC stuck at 0.627 despite the model having clearly learned *something* real (ROC-AUC 0.810,
+and genuine 2.35× enrichment at the head of the queue). One cause underneath all three: **14
+coarse, largely integer-valued per-query features can tell "somewhat attack-like" from "not," but
+cannot finely order rows within either group.** This is a property of the supplied stateless
+feature set, not of LightGBM — and it bounds what any row-level model on these features can
+achieve, which is the honest frame for §7's modest headline number.
 
 ## 10. Track 2 cascade (retained, reframed as an interpretability layer)
 
@@ -532,9 +578,14 @@ the 0.9999 number this report just explained is not trustworthy.
   queries, which many teams could not staff. Light-attack detection remains the harder problem
   (§7b's LOTO finding), and no feature-engineering attempt so far has improved it without relying
   on the single-composition-capture artifact described in §9.
-- The ML model's advantage over the non-ML rule baseline is modest and concentrated in ranking
-  quality, not at the tight operating point, where the rule is competitive on precision at equal
-  recall (§6b) — reported rather than framed around a more flattering comparison.
+- The ML model's advantage over the non-ML rule baseline is modest: better ranking (ROC-AUC 0.810
+  vs 0.700) and +6 points of recall at comparable FPR, but at the tight operating point the rule is
+  competitive on precision at equal recall (§6b) — reported rather than framed around a more
+  flattering comparison.
+- **Alert ranking works only for roughly the top 100–140 alerts** (91.7% precision at depth 48,
+  74.0% at 100, then flat at ~62.6% thereafter, §6b). Beyond that depth the score provides fixed
+  enrichment and no prioritization, so the workload-reduction claim is bounded to the head of the
+  queue — see §9 Experiment 4 for the underlying feature-space limitation.
 - The cascade's escalation rule has a −0.12 margin on the single benign test session (§10) — much
   narrower than the identical 38.9% escalation figure implies, and unestimable at n=1.
 - Session-repeat features, session-level cascade confirmation, and window-level aggregation all

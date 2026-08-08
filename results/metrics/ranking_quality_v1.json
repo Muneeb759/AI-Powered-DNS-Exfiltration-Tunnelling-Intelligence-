@@ -1,0 +1,66 @@
+{
+  "model_version": "stateless_lgbm_v1",
+  "test_base_rate": 0.3894646026913656,
+  "tie_warning": "Naive precision@k is invalid on this model: 22,763 test rows share the score 0.712416, so a fixed k slices a tie block arbitrarily. Naive precision@1000 computes to 0.949 purely as an artifact of row order within that block and is not reported. All depths below are tie-respecting (score >= d cut points).",
+  "precision_at_depth_tie_respecting": [
+    {
+      "requested_depth": 50,
+      "score": 0.8412202819677463,
+      "cum_n": 48,
+      "cum_precision": 0.9166666666666666,
+      "lift_over_base_rate": 2.353658484833053
+    },
+    {
+      "requested_depth": 100,
+      "score": 0.7500174731716797,
+      "cum_n": 100,
+      "cum_precision": 0.74,
+      "lift_over_base_rate": 1.9000443041197739
+    },
+    {
+      "requested_depth": 200,
+      "score": 0.7254825117318727,
+      "cum_n": 141,
+      "cum_precision": 0.6382978723404256,
+      "lift_over_base_rate": 1.6389111306381028
+    },
+    {
+      "requested_depth": 500,
+      "score": 0.7254825117318727,
+      "cum_n": 141,
+      "cum_precision": 0.6382978723404256,
+      "lift_over_base_rate": 1.6389111306381028
+    },
+    {
+      "requested_depth": 1600,
+      "score": 0.7181241315278297,
+      "cum_n": 1592,
+      "cum_precision": 0.6268844221105527,
+      "lift_over_base_rate": 1.6096056426656375
+    },
+    {
+      "requested_depth": 7000,
+      "score": 0.713607050540105,
+      "cum_n": 6770,
+      "cum_precision": 0.6255539143279173,
+      "lift_over_base_rate": 1.6061893943764707
+    },
+    {
+      "requested_depth": 30000,
+      "score": 0.7094887593104026,
+      "cum_n": 30290,
+      "cum_precision": 0.6259821723341037,
+      "lift_over_base_rate": 1.6072890013836978
+    },
+    {
+      "requested_depth": 40000,
+      "score": 0.7090645673881498,
+      "cum_n": 46056,
+      "cum_precision": 0.6266935904116727,
+      "lift_over_base_rate": 1.6091156579595531
+    }
+  ],
+  "asymptotic_flat_precision": 0.626461812183776,
+  "ranking_effective_until_depth": 1592,
+  "finding": "Ranking is real but confined to the extreme head of the list. The top ~48 rows are 91.7% precise (2.35x base rate) and the top 100 are 74.0% (1.90x), but by depth ~141 cumulative precision has already collapsed to ~63.8%, and from there to the full flagged pool it is flat at ~62.6% (~1.61x). So the score meaningfully prioritizes only the first ~100-140 alerts out of 100,841 rows; past that it provides a fixed enrichment factor and no further discrimination. This is the same underlying limitation as the score quantization in section 7 and the near-identical light/heavy recall: the 14-feature space supports coarse separation, not fine ranking."
+}
