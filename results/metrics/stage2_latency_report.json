@@ -1,0 +1,73 @@
+{
+  "measurement_mode": "EMPIRICAL_BENCHMARK",
+  "environment": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
+    "cpu_count_logical": 12,
+    "python_version": "3.12.5",
+    "lightgbm_version": "4.7.0",
+    "scikit_learn_version": "1.7.2",
+    "numpy_version": "2.3.2",
+    "concurrency": 1,
+    "concurrency_note": "single-threaded, sequential calls -- no concurrent/async execution measured"
+  },
+  "one_time_context_build": {
+    "description": "Parses all 18 capture files' stateful CSVs into the pooled per-capture context table (src/features/stateful_context.py). Paid once per enrichment refresh, not per query or per session. n=3 repeats is too small for a meaningful percentile -- reporting min/mean/max, not median/p95, to avoid a false-precision claim over so few samples.",
+    "n_capture_files": 18,
+    "wall_time_seconds_per_run": [
+      28.437,
+      27.916,
+      27.169
+    ],
+    "wall_time_seconds_mean": 27.841,
+    "wall_time_seconds_min": 27.169,
+    "wall_time_seconds_max": 28.437
+  },
+  "marginal_per_escalated_session": {
+    "description": "Dict lookup into the already-built pooled context + majority-vote decision over the top-3 discriminative stateful features (src/models/cascade.py:_stage2_vote). This is the cost actually paid at escalation time, on top of Stage 1's per-query cost.",
+    "n_trials": 2000,
+    "latency_us_per_session": 164.765,
+    "latency_distribution_us": {
+      "n_calls": 2000,
+      "mean_us": 164.765,
+      "median_us": 145.5,
+      "p95_us": 272.135,
+      "p99_us": 423.411,
+      "min_us": 109.3,
+      "max_us": 719.7
+    },
+    "wall_time_seconds": 0.3295
+  },
+  "discriminative_features_used": [
+    {
+      "feature": "sf_ttl_mean",
+      "gap": 81.20292175215837,
+      "attack_side": "lower",
+      "benign_mean": 93.1722349456657,
+      "attack_mean": 11.96931319350733
+    },
+    {
+      "feature": "sf_rr_name_length",
+      "gap": 7.818401456791278,
+      "attack_side": "higher",
+      "benign_mean": 17.5439626589759,
+      "attack_mean": 25.36236411576718
+    },
+    {
+      "feature": "sf_ttl_variance",
+      "gap": 3.4898769292473415,
+      "attack_side": "lower",
+      "benign_mean": 3.490852646890051,
+      "attack_mean": 0.0009757176427098042
+    }
+  ],
+  "one_stage_vs_two_stage_comparison": {
+    "stage1_only_mean_us_per_query": 2228.36,
+    "stage1_only_median_us_per_query": 2221.65,
+    "stage1_only_p95_us_per_query": 2751.26,
+    "stage2_marginal_mean_us_per_escalated_session": 164.765,
+    "stage2_marginal_median_us_per_escalated_session": 145.5,
+    "stage2_marginal_p95_us_per_escalated_session": 272.135,
+    "note": "Stage 2's marginal cost is paid once per SESSION (18 sessions total in this dataset), not once per query -- effectively negligible per-query overhead even for the 38.9% of test rows that belong to an escalated session (see results/metrics/cascade_report.json:pct_test_rows_escalated_to_stage2). The one-time context build (27.8s for 18 files) is the real cost driver, and it is a batch/offline operation, not part of the online query path."
+  }
+}

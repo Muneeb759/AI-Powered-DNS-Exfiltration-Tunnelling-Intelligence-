@@ -2,23 +2,65 @@
   "measurement_mode": "EMPIRICAL_BENCHMARK",
   "classifier_type": "LGBMClassifier",
   "features_count": 14,
-  "extraction_latency_us_per_query": 2.68,
+  "environment": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
+    "cpu_count_logical": 12,
+    "python_version": "3.12.5",
+    "lightgbm_version": "4.7.0",
+    "scikit_learn_version": "1.7.2",
+    "numpy_version": "2.3.2",
+    "concurrency": 1,
+    "concurrency_note": "single-threaded, sequential calls -- no concurrent/async execution measured"
+  },
+  "extraction_latency_us_per_query": 2.9,
+  "extraction_latency_distribution": {
+    "n_calls": 1000,
+    "mean_us": 2.895,
+    "median_us": 2.7,
+    "p95_us": 2.9,
+    "p99_us": 9.714,
+    "min_us": 2.2,
+    "max_us": 42.7
+  },
   "single_query_mode": {
     "batch_size": 1,
-    "inference_latency_us_per_query": 1996.2,
-    "total_pipeline_latency_us_per_query": 1998.87,
-    "throughput_queries_per_sec": 500.3,
-    "wall_time_seconds": 0.9981,
+    "inference_latency_us_per_query": 2225.46,
+    "inference_latency_distribution_us": {
+      "n_calls": 500,
+      "mean_us": 2225.464,
+      "median_us": 2218.95,
+      "p95_us": 2748.355,
+      "p99_us": 3226.62,
+      "min_us": 1308.7,
+      "max_us": 3659.3
+    },
+    "total_pipeline_latency_us_per_query": 2228.36,
+    "total_pipeline_median_us_per_query": 2221.65,
+    "total_pipeline_p95_us_per_query": 2751.26,
+    "throughput_queries_per_sec": 448.8,
+    "wall_time_seconds": 1.1127,
     "queries_processed": 500,
-    "arithmetic_proof": "500 queries in 0.9981 s = 501.0 QPS"
+    "arithmetic_proof": "500 queries, mean 1.1127 s total = 449.3 QPS"
   },
   "batch_128_mode": {
     "batch_size": 128,
-    "inference_latency_us_per_query": 16.01,
-    "total_pipeline_latency_us_per_query": 18.68,
-    "throughput_queries_per_sec": 53523.9,
-    "wall_time_seconds": 0.2049,
+    "inference_latency_us_per_query": 19.4,
+    "batch_latency_distribution_us": {
+      "n_calls": 100,
+      "mean_us": 2483.035,
+      "median_us": 2451.75,
+      "p95_us": 3244.36,
+      "p99_us": 4694.033,
+      "min_us": 1574.8,
+      "max_us": 5142.8
+    },
+    "total_pipeline_latency_us_per_query": 22.29,
+    "total_pipeline_median_us_per_query": 21.85,
+    "total_pipeline_p95_us_per_query": 28.25,
+    "throughput_queries_per_sec": 44855.7,
+    "wall_time_seconds": 0.2483,
     "queries_processed": 12800,
-    "arithmetic_proof": "12800 queries in 0.2049 s = 62471.7 QPS"
+    "arithmetic_proof": "12800 queries, mean 0.2483 s total = 51549.8 QPS"
   }
 }

@@ -277,39 +277,98 @@ confirmation step, not carrying the whole detection burden by itself.
 
 ## 11. Latency and throughput
 
-`src/latency/harness.py`, empirical benchmark, LightGBM stateless classifier, 14 features:
+**Environment declared** (brief requirement: "declared hardware, software versions, batch size,
+and concurrency"), from `results/metrics/latency_baseline.json:environment` /
+`results/metrics/stage2_latency_report.json:environment`:
 
-| Mode | Feature extraction | Inference | Total | Throughput |
+| | |
+|---|---|
+| OS | Windows-11-10.0.26200-SP0 |
+| Processor | AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD, 12 logical CPUs |
+| Python | 3.12.5 |
+| LightGBM | 4.7.0 · scikit-learn 1.7.2 · numpy 2.3.2 |
+| Concurrency | 1 (single-threaded, sequential calls — no concurrent/async execution measured) |
+
+`src/latency/harness.py`, empirical benchmark, LightGBM stateless classifier, 14 base features.
+**Median and p95 are computed from per-call latency distributions** (`n=500` single-query calls,
+`n=100` batches of 128, `n=1000` extraction calls), not derived from a single averaged wall-clock
+figure — this is the fix that closes the brief's explicit "median and p95 processing latency"
+requirement, which the previous mean-only version did not satisfy:
+
+| Mode | Mean | Median | p95 | Throughput |
 |---|---|---|---|---|
-| Single-query (batch=1) | 2.68 μs/query | 1,996.2 μs/query | 1,998.87 μs/query | 500.3 QPS |
-| Batched (batch=128) | 2.68 μs/query | 16.01 μs/query | 18.68 μs/query | 53,523.9 QPS |
+| Single-query (batch=1) | 2,228.4 μs/query | 2,221.7 μs/query | 2,751.3 μs/query | 448.8 QPS |
+| Batched (batch=128) | 22.3 μs/query | 21.9 μs/query | 28.3 μs/query | 44,855.7 QPS |
 
-Batching gives a ~107x throughput improvement — almost entirely from amortizing per-call inference
-overhead, not feature extraction (which is already negligible at ~2.7 μs/query in both modes).
+(Absolute values shift run-to-run with background system load — a documented property of
+wall-clock measurement on a shared OS, not a modelling change; batching's ~100x throughput
+multiplier over single-query mode is the stable, reportable finding.)
 
-**TODO:** measure Stage 2's added cost (stateful context lookup + vote) separately, to complete
-the "one-stage vs two-stage... latency" requirement quantitatively rather than qualitatively.
+Batching gives roughly two orders of magnitude of throughput improvement — almost entirely from
+amortizing per-call inference overhead, not feature extraction (which stays under a few
+microseconds per query in both modes).
+
+**Stage 2 added cost** (`src/latency/stage2_harness.py`, `results/metrics/stage2_latency_report.json`):
+
+| Cost component | When paid | Mean | Median | p95 |
+|---|---|---|---|---|
+| One-time stateful context build (18 capture files, `ast.literal_eval` parsing of ~262K stateful rows) | Once per enrichment refresh — batch/offline, not on the query path | 27.8s (n=3: 27.2–28.4s) | n/a — 3 repeats too few for a percentile; min/max shown instead | n/a |
+| Marginal per-escalated-session decision (dict lookup + majority vote over 3 features) | Once per escalating session (18 sessions total in this dataset) | 164.8 μs | 145.5 μs | 272.1 μs (n=2,000) |
+
+**One-stage vs. two-stage comparison:** Stage 1 alone costs 2,228.4 μs/query mean (2,751.3 μs p95,
+batch=1). Stage 2's marginal cost (164.8 μs mean, 272.1 μs p95) is paid once per *session*, not
+once per query — spread across even a single escalated session's rows, the per-query overhead it
+adds is negligible, and 38.9% of test rows belong to an escalated session
+(`results/metrics/cascade_report.json`). The real cost driver is the one-time context build
+(27.8s), and it is explicitly a batch/offline operation run against the enrichment source, not
+part of the live per-query decision path — this is the "measured compute savings" the Track 2
+brief asks for: the expensive step is amortized across an entire session's traffic, not repeated
+per row.
 
 ## 12. Failure analysis
 
-**False positive example** (`benign_heavy_1`, row `_11239`): raw score 0.552, just above the
-0.544 alert threshold. Features: `sl_len`=25, `sl_entropy`=3.79, `sl_labels`=9,
-`sl_subdomain_length`=15. A long, multi-label benign query with moderately high entropy — close
-enough to attack-like structure on length/label-count alone to cross the threshold, despite
-entropy not actually being extreme.
+`src/eval/failure_analysis.py` (v2 model, threshold 0.99985). Full detail in
+`results/metrics/failure_analysis.json`.
 
-**False negative pattern** (repeats identically across both a light and a heavy capture, e.g.
-`light_text_1062` and `heavy_audio_8679`): raw score 0.530, just under threshold. Features:
-`sl_fqdn_count`=32, `sl_upper`=32, `sl_lower`=0, `sl_labels`=1, `sl_len`=33, entropy=2.735 — a
-single-label, all-uppercase 32-character query. This is a plausible base32/base64-style encoded
-exfil chunk, and the *exact same feature vector* recurs across multiple capture files and both
-attack categories, suggesting it may be a fixed protocol/handshake string from the exfiltration
-tool rather than varying per-payload content — the model treats it as borderline rather than
-confidently malicious, likely because its entropy (2.74) isn't extreme and near-identical strings
-don't give the model per-instance variation to key on.
+**False positives: zero, at the current operating threshold** (precision 100% on `test`, see §7).
+Rather than invent an FP example, the table below shows the 5 highest-scoring BENIGN rows in
+test — the closest calls that never crossed the alert threshold — explicitly labelled as
+near-misses, not actual failures.
 
-**TODO:** pull the full worst-5 FP / worst-5 FN table (brief requirement) rather than one example
-each; this section currently has one grounded example per category as a starting point.
+**Worst 5 false negatives** (lowest raw score among missed attack rows — the model was most
+confident these were benign):
+
+| unit_id (truncated) | category | raw score | `sl2_session_repeat_count` | `sl_entropy` | `sl_len` |
+|---|---|---|---|---|---|
+| `heavy_audio.pcap.csv_2080` | heavy | 0.0011 | 1.0 | 2.15 | 6 |
+| `light_text.pcap.csv_3245` | light | 0.0015 | 1.0 | 2.65 | 13 |
+| `heavy_audio.pcap.csv_28369` | heavy | 0.0080 | 2.0 | 2.53 | 11 |
+| `heavy_audio.pcap.csv_28370` | heavy | 0.0080 | 2.0 | 2.53 | 11 |
+| `heavy_audio.pcap.csv_2081` | heavy | 0.0145 | 2.0 | 3.11 | 13 |
+
+**Pattern:** every worst-FN row has `sl2_session_repeat_count` of 1–2 — these are the rare
+non-repeating queries inside otherwise-repetitive attack sessions (§7's dominant feature). The
+model's strongest signal is repetition; a session's few one-off queries don't carry it, so they
+score low even though the session overall is confidently flagged. This is a direct, quantitative
+illustration of the §13 limitation: the repeat-count signal is a session-level behavioral
+pattern, and individual non-repeating rows within an attack session are its blind spot.
+
+**Top 5 highest-scoring benign rows (near-misses, not false positives):**
+
+| unit_id (truncated) | raw score | `sl2_session_repeat_count` | `sl_entropy` | `sl_len` |
+|---|---|---|---|---|
+| `benign_heavy_1.pcap.csv_11239` | 0.9969 | 20.0 | 3.79 | 25 |
+| `benign_heavy_1.pcap.csv_15396` | 0.9969 | 20.0 | 3.79 | 25 |
+| `benign_heavy_1.pcap.csv_15496` | 0.9969 | 20.0 | 3.79 | 25 |
+| `benign_heavy_1.pcap.csv_16475` | 0.9969 | 20.0 | 3.79 | 25 |
+| `benign_heavy_1.pcap.csv_16517` | 0.9969 | 20.0 | 3.79 | 25 |
+
+**Pattern:** the same repeated benign query (`benign_heavy_1`, repeat_count=20, long/high-entropy
+subdomain) is the closest this model comes to a false alarm — a benign host that legitimately
+issues the same somewhat unusual-looking query 20 times still scores well below the ~7,000+
+repeat counts typical of attack sessions (§7), so it never crosses the threshold. This is the
+concrete evidence behind §13's limitation that a production session with more benign repetition
+than this testbed's benign traffic could erode that margin.
 
 ## 13. Limitations
 
@@ -368,8 +427,6 @@ expander, disposition buttons) — not just written and assumed to work.
 
 ## TODO before submission
 
-- [ ] Full worst-5 FP / worst-5 FN failure table (currently one example each, §12)
-- [ ] Stage 2 latency measurement (§11 TODO)
 - [ ] Demo script + rehearsal (benign / light / heavy cases, cascade decision, SHAP, metrics table, close on limitations)
 - [ ] Results Bundle deliverable (organizer test-ID predictions, scoring output, threshold record)
 - [ ] Data & Model Statement deliverable (snapshot version + SHA-256, no external services — data mostly assembled in `results/metrics/provenance.json`, needs to be written up as its own deliverable doc)
