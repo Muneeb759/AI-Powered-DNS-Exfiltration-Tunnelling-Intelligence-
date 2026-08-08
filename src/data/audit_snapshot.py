@@ -80,6 +80,58 @@ def audit_snapshot(raw_dir: str = "data/raw") -> dict:
     total_benign = int((sl_all["_label"] == 0).sum())
     total_positive = int((sl_all["_label"] == 1).sum())
 
+    # B1: stateless/stateful row-level join analysis (cited in docs/PHASE1_AUDIT.md B1)
+    join_analysis = {
+        "row_level_join_exists": False,
+        "join_level": "capture_file_level",
+        "stateless_raw_header": ",".join(sl_cols),
+        "stateful_raw_header": ",".join(sf_cols),
+    }
+
+    # B2: session definition comparison, Rule A (capture_file) vs Rule B (capture_file + sld)
+    # (cited in docs/PHASE1_AUDIT.md B2)
+    rule_a_sessions = sl_all.groupby("_capture_file")["_attack_category"].agg(lambda s: s.mode().iat[0])
+    rule_a_total = int(rule_a_sessions.shape[0])
+    rule_a_light = int((rule_a_sessions == "light").sum())
+    rule_a_heavy = int((rule_a_sessions == "heavy").sum())
+    rule_a_benign = int((rule_a_sessions == "benign").sum())
+
+    sl_all["_rule_b_session"] = sl_all["_capture_file"] + "_" + sl_all["sld"].astype(str)
+    rule_b_sessions = sl_all.groupby("_rule_b_session")["_attack_category"].agg(lambda s: s.mode().iat[0])
+    rule_b_total = int(rule_b_sessions.shape[0])
+    rule_b_light = int((rule_b_sessions == "light").sum())
+    rule_b_heavy = int((rule_b_sessions == "heavy").sum())
+    rule_b_benign = int((rule_b_sessions == "benign").sum())
+
+    session_definitions = {
+        "rule_A_capture_file": {
+            "total_sessions": rule_a_total,
+            "positive_sessions": rule_a_light + rule_a_heavy,
+            "light_sessions": rule_a_light,
+            "heavy_sessions": rule_a_heavy,
+            "benign_sessions": rule_a_benign,
+        },
+        "rule_B_capture_file_sld": {
+            "total_sessions": rule_b_total,
+            "positive_sessions": rule_b_light + rule_b_heavy,
+            "light_sessions": rule_b_light,
+            "heavy_sessions": rule_b_heavy,
+            "benign_sessions": rule_b_benign,
+        },
+    }
+
+    # C6/C7: collection-day reconciliation (cited in docs/PHASE1_AUDIT.md C6/C7)
+    calendar_days = sorted(sl_all["_collection_day"].unique())
+    benign_days = sorted(sl_all.loc[sl_all["_label"] == 0, "_collection_day"].unique())
+    days_with_zero_benign = sorted(set(calendar_days) - set(benign_days))
+    collection_days_reconciliation = {
+        "total_calendar_days": len(calendar_days),
+        "calendar_days": calendar_days,
+        "days_with_benign_rows": benign_days,
+        "days_with_zero_benign_rows": days_with_zero_benign,
+        "days_ineligible_as_held_out_test_day": days_with_zero_benign,
+    }
+
     # Candidate probes
     candidate_probes = {
         "session_id": "None in CSV columns (must be derived or capture-level)",
@@ -107,6 +159,9 @@ def audit_snapshot(raw_dir: str = "data/raw") -> dict:
         "stateful_file_count": len(stateful_files),
         "stateless_total_rows": total_rows,
         "stateful_total_rows": len(sf_all),
+        "join_analysis": join_analysis,
+        "session_definitions": session_definitions,
+        "collection_days_reconciliation": collection_days_reconciliation,
         "label_counts": {
             "benign_0": total_benign,
             "positive_exfiltration_1": total_positive,

@@ -84,7 +84,8 @@ def run_handoff_check() -> bool:
     except Exception as e:
         print(f"[FAIL] Split protocol assertion failed: {e}")
         return False
-    print("[PASS] Split protocol invariants verified (Day & Session disjoint).")
+    print("[PASS] Split protocol invariants verified (session_id disjoint, dual-category composition, unit_id unique).")
+    print("       NOTE: collection_day is intentionally NOT disjoint across partitions -- see results/metrics/split_summary.json:day_overlap.")
     
     # 4. Feature Lists Verification
     with open("configs/feature_lists.yaml", "r") as f:
