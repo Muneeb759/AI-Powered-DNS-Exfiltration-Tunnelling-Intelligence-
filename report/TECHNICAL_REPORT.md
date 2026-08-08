@@ -553,9 +553,9 @@ bug.
 
 Declared primary track remains Track 1 (§1). This is a supporting Track 3 layer over the
 already-evaluated Stage 1 detector and cascade — no separate detector, baseline, or metric set of
-its own. **TODO:** the Streamlit app currently loads `models/stateless_lgbm.pkl` (the rejected v2
-bundle) by default — must repoint it to `stateless_lgbm_v1.pkl` before the demo, or it will show
-the 0.9999 number this report just explained is not trustworthy.
+its own. It loads `models/stateless_lgbm_v1.pkl` and `results/metrics/stateless_model_v1_report.json`
+throughout — the rejected v2 bundle is never read — and this was verified by running the app and
+reading the rendered Model Card (PR-AUC 0.6269, threshold 0.7262), not by inspecting the source alone.
 
 - **Case Queue tab:** risk-sorted triage queue, per-query SHAP reason codes, decision band, the
   row's cascade session status, and a disposition control (approve / dismiss / escalate) —

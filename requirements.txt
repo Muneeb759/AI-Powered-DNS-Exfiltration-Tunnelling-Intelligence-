@@ -1,11 +1,16 @@
-# Pinned to versions verified against the Phase 1 pipeline (make phase1) on 2026-08-08.
-# Plan doc specifies Python 3.11; this pipeline was verified end-to-end on Python 3.12.5 as well.
+# Core dependencies -- everything needed to reproduce the reported score and run the tests.
+# Pinned to versions verified end-to-end against the full pipeline on 2026-08-08.
+# Plan doc specifies Python 3.11; verified on 3.12.5 as well.
+#
+# This file deliberately EXCLUDES the demo-only stack (streamlit, shap). Verifying the
+# headline numbers does not require the analyst UI, and installing it roughly doubles the
+# dependency tree. For the Streamlit case view and SHAP explanations:
+#     pip install -r requirements-demo.txt
 pandas==2.3.2
 numpy==2.3.2
 pyarrow==22.0.0
 scikit-learn==1.7.2
 lightgbm==4.7.0
-shap==0.52.0
-streamlit==1.52.0
+joblib==1.5.2
 PyYAML==6.0.2
 pytest==9.1.1

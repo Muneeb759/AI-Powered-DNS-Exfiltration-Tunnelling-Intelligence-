@@ -1,0 +1,8 @@
+# Demo / analyst-UI dependencies. Only needed for:
+#   - app/streamlit_app.py       (Track 3 analyst case view)
+#   - src/explain/shap_explain.py (SHAP reason codes)
+#
+# Reproducing the reported headline score does NOT require these -- see requirements.txt.
+-r requirements.txt
+shap==0.52.0
+streamlit==1.52.0
