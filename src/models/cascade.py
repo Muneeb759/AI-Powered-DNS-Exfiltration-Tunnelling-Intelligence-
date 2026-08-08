@@ -242,7 +242,7 @@ def _build_comparison_report(test, discriminative_features, chosen_delta, delta_
         "pct_test_rows_escalated_to_stage2": pct_rows_escalated,
         "n_test_rows_escalated_to_stage2": n_escalated_rows,
         "pct_test_rows_stage1_only_cheap_path": 1.0 - pct_rows_escalated,
-        "session_verdicts": {k: {kk: vv for kk, vv in v.items() if kk != "detail"} for k, v in session_verdicts.items()},
+        "session_verdicts": session_verdicts,
         "one_stage_stage1_only": pm("stage1_prediction"),
         "two_stage_cascade": pm("cascade_prediction"),
         "light_only": {

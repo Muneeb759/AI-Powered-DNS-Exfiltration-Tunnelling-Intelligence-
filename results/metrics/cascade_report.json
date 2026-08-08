@@ -68,14 +68,54 @@
       "stateful_context_available": true,
       "confirmed": true,
       "votes_attack_like": 3,
-      "votes_total": 3
+      "votes_total": 3,
+      "detail": [
+        {
+          "feature": "sf_ttl_mean",
+          "value": 11.953311617806731,
+          "midpoint": 52.57077406958652,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_rr_name_length",
+          "value": 25.376764386536372,
+          "midpoint": 21.45316338737154,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_ttl_variance",
+          "value": 0.0,
+          "midpoint": 1.7459141822663804,
+          "attack_like": true
+        }
+      ]
     },
     "heavy_audio": {
       "escalated": true,
       "stateful_context_available": true,
       "confirmed": true,
       "votes_attack_like": 3,
-      "votes_total": 3
+      "votes_total": 3,
+      "detail": [
+        {
+          "feature": "sf_ttl_mean",
+          "value": 10.937680484396832,
+          "midpoint": 52.57077406958652,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_rr_name_length",
+          "value": 25.214625058220772,
+          "midpoint": 21.45316338737154,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_ttl_variance",
+          "value": 0.0025151374010246854,
+          "midpoint": 1.7459141822663804,
+          "attack_like": true
+        }
+      ]
     },
     "benign_heavy_1": {
       "escalated": false

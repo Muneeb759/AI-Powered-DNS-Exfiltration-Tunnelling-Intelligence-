@@ -1,0 +1,93 @@
+{
+  "sample_size": 5000,
+  "ranked_features": [
+    {
+      "feature": "sl2_session_repeat_ratio",
+      "mean_abs_shap": 8.91591177338056
+    },
+    {
+      "feature": "sl_fqdn_count",
+      "mean_abs_shap": 1.626570305584707
+    },
+    {
+      "feature": "sl2_session_repeat_count",
+      "mean_abs_shap": 1.22046286404952
+    },
+    {
+      "feature": "sl2_alpha_ratio",
+      "mean_abs_shap": 0.6094761708226846
+    },
+    {
+      "feature": "sl2_subdomain_entropy",
+      "mean_abs_shap": 0.38885906908041934
+    },
+    {
+      "feature": "sl2_special_ratio",
+      "mean_abs_shap": 0.3416935049740828
+    },
+    {
+      "feature": "sl_subdomain_length",
+      "mean_abs_shap": 0.3225247989419492
+    },
+    {
+      "feature": "sl2_label_depth_entropy",
+      "mean_abs_shap": 0.2236233541789008
+    },
+    {
+      "feature": "sl_labels_average",
+      "mean_abs_shap": 0.10487433678241896
+    },
+    {
+      "feature": "sl2_max_label_fraction",
+      "mean_abs_shap": 0.10233523703626576
+    },
+    {
+      "feature": "sl_entropy",
+      "mean_abs_shap": 0.0847821026668376
+    },
+    {
+      "feature": "sl_longest_word_len",
+      "mean_abs_shap": 0.029101105312221928
+    },
+    {
+      "feature": "sl_special",
+      "mean_abs_shap": 0.02448223528451498
+    },
+    {
+      "feature": "sl_labels_max",
+      "mean_abs_shap": 0.021368461606140282
+    },
+    {
+      "feature": "sl_lower",
+      "mean_abs_shap": 0.02095906501788997
+    },
+    {
+      "feature": "sl_len",
+      "mean_abs_shap": 0.008030460917786053
+    },
+    {
+      "feature": "sl2_numeric_subdomain_density",
+      "mean_abs_shap": 0.007695902338655015
+    },
+    {
+      "feature": "sl_labels",
+      "mean_abs_shap": 0.0061673551838327635
+    },
+    {
+      "feature": "sl_numeric",
+      "mean_abs_shap": 0.0037506534044826987
+    },
+    {
+      "feature": "sl_numeric_ratio",
+      "mean_abs_shap": 0.0009564097738563342
+    },
+    {
+      "feature": "sl_upper",
+      "mean_abs_shap": 0.00023131927551429333
+    },
+    {
+      "feature": "sl_subdomain_flag",
+      "mean_abs_shap": 0.0
+    }
+  ]
+}
