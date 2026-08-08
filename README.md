@@ -109,6 +109,17 @@ To rebuild splits and retrain from raw data first (slower, fully from scratch):
 python scripts/reproduce.py --retrain
 ```
 
+> ⚠️ **`--retrain` overwrites the tracked model artifact** `models/stateless_lgbm_v1.pkl` (and
+> `models/stateless_threshold_v1.json`). A retrained model can differ slightly from the committed
+> one — LightGBM is not guaranteed bit-identical across thread counts, CPU architectures, or
+> library builds — so after running it you may no longer reproduce the published numbers exactly.
+> **Use the plain `python scripts/reproduce.py` to verify our reported score.** If you have already
+> run `--retrain` and want the original artifacts back:
+>
+> ```bash
+> git checkout -- models/
+> ```
+
 | Task | Command | `make` equivalent |
 |---|---|---|
 | Reproduce headline score | `python scripts/reproduce.py` | `make reproduce` |
