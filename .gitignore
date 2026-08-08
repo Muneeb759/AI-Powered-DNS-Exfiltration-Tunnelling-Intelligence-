@@ -21,3 +21,6 @@ ENV/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Pipeline prediction outputs — superseded by results/bundle/ (the submitted deliverable)
+results/predictions/
