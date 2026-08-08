@@ -3,6 +3,51 @@
   "split_status": "PROVISIONAL",
   "release_type": "public_unb_release",
   "seed": 20260808,
+  "disjointness_guarantee": "session_id (capture_file) only -- collection_day is NOT guaranteed disjoint, see day_overlap below",
+  "day_overlap": {
+    "day_disjoint": false,
+    "partition_days": {
+      "train": [
+        "2020-11-20",
+        "2020-11-21",
+        "2020-11-22",
+        "2020-11-24"
+      ],
+      "val_cal": [
+        "2020-11-21",
+        "2020-11-22",
+        "2020-11-23"
+      ],
+      "val_thr": [
+        "2020-11-21",
+        "2020-11-23",
+        "2020-11-24"
+      ],
+      "test": [
+        "2020-11-22"
+      ]
+    },
+    "overlaps": {
+      "train<->val_cal": [
+        "2020-11-21",
+        "2020-11-22"
+      ],
+      "train<->val_thr": [
+        "2020-11-21",
+        "2020-11-24"
+      ],
+      "train<->test": [
+        "2020-11-22"
+      ],
+      "val_cal<->val_thr": [
+        "2020-11-21",
+        "2020-11-23"
+      ],
+      "val_cal<->test": [
+        "2020-11-22"
+      ]
+    }
+  },
   "partitions": {
     "train": {
       "total_rows": 405851,

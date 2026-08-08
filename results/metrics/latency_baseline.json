@@ -1,24 +1,24 @@
 {
   "measurement_mode": "EMPIRICAL_BENCHMARK",
-  "classifier_type": "HistGradientBoostingClassifier",
+  "classifier_type": "LGBMClassifier",
   "features_count": 14,
-  "extraction_latency_us_per_query": 1.64,
+  "extraction_latency_us_per_query": 2.68,
   "single_query_mode": {
     "batch_size": 1,
-    "inference_latency_us_per_query": 2295.74,
-    "total_pipeline_latency_us_per_query": 2297.38,
-    "throughput_queries_per_sec": 435.3,
-    "wall_time_seconds": 1.1479,
+    "inference_latency_us_per_query": 1996.2,
+    "total_pipeline_latency_us_per_query": 1998.87,
+    "throughput_queries_per_sec": 500.3,
+    "wall_time_seconds": 0.9981,
     "queries_processed": 500,
-    "arithmetic_proof": "500 queries in 1.1479 s = 435.6 QPS"
+    "arithmetic_proof": "500 queries in 0.9981 s = 501.0 QPS"
   },
   "batch_128_mode": {
     "batch_size": 128,
-    "inference_latency_us_per_query": 21.52,
-    "total_pipeline_latency_us_per_query": 23.16,
-    "throughput_queries_per_sec": 43183.1,
-    "wall_time_seconds": 0.2754,
+    "inference_latency_us_per_query": 16.01,
+    "total_pipeline_latency_us_per_query": 18.68,
+    "throughput_queries_per_sec": 53523.9,
+    "wall_time_seconds": 0.2049,
     "queries_processed": 12800,
-    "arithmetic_proof": "12800 queries in 0.2754 s = 46475.9 QPS"
+    "arithmetic_proof": "12800 queries in 0.2049 s = 62471.7 QPS"
   }
 }

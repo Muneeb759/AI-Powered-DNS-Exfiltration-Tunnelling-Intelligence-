@@ -44,10 +44,37 @@ def assert_group_disjoint(df_list: List[pd.DataFrame], group_col: str) -> None:
             overlap = group_sets[i].intersection(group_sets[j])
             assert len(overlap) == 0, f"Group overlap found in '{group_col}' between partition {i} and {j}: {overlap}"
 
+def report_day_overlap(train: pd.DataFrame, val_cal: pd.DataFrame, val_thr: pd.DataFrame, test: pd.DataFrame) -> dict:
+    """Collection_day is NOT a disjointness guarantee of this split (see docs/SESSION_CONSTRUCTION.md) --
+    only session_id (capture_file) is. Multiple capture files sharing a calendar day legitimately land in
+    different partitions, so the same collection_day value can appear in more than one partition. This is
+    reported here explicitly rather than left as an implicit/undocumented property, since day-disjoint
+    partitioning was tried first and abandoned because it left val/test partitions with zero light-attack
+    rows (see PHASE1_AUDIT.md M1)."""
+    day_sets = {
+        "train": set(train["collection_day"].dropna().unique()),
+        "val_cal": set(val_cal["collection_day"].dropna().unique()),
+        "val_thr": set(val_thr["collection_day"].dropna().unique()),
+        "test": set(test["collection_day"].dropna().unique()),
+    }
+    overlaps = {}
+    names = list(day_sets.keys())
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            shared = day_sets[names[i]].intersection(day_sets[names[j]])
+            if shared:
+                overlaps[f"{names[i]}<->{names[j]}"] = sorted(shared)
+    return {
+        "day_disjoint": len(overlaps) == 0,
+        "partition_days": {k: sorted(v) for k, v in day_sets.items()},
+        "overlaps": overlaps,
+    }
+
 def assert_split_protocol(train: pd.DataFrame, val_cal: pd.DataFrame, val_thr: pd.DataFrame, test: pd.DataFrame) -> None:
-    # 1. Group / capture file disjointness
+    # 1. Group / capture file disjointness (this is the only disjointness guarantee this split makes --
+    #    collection_day is intentionally NOT disjoint; see report_day_overlap())
     assert_group_disjoint([train, val_cal, val_thr, test], "session_id")
-    
+
     # 2. Dual-class and dual-category composition checks
     for name, partition in [("train", train), ("val_cal", val_cal), ("val_thr", val_thr), ("test", test)]:
         n_ben = (partition["label"] == 0).sum()
@@ -56,12 +83,15 @@ def assert_split_protocol(train: pd.DataFrame, val_cal: pd.DataFrame, val_thr: p
         assert n_ben > 0, f"Partition '{name}' must contain benign samples, got 0"
         assert n_light > 0, f"Partition '{name}' must contain light attack samples, got 0"
         assert n_heavy > 0, f"Partition '{name}' must contain heavy attack samples, got 0"
-        
+
     # 3. Decision unit uniqueness
     all_units = list(train["unit_id"]) + list(val_cal["unit_id"]) + list(val_thr["unit_id"]) + list(test["unit_id"])
     assert len(all_units) == len(set(all_units)), "Duplicate unit_id found across partitions!"
-    
-    print("ALL CAPTURE-FILE GROUPED SPLIT INVARIANT ASSERTIONS PASSED SUCCESSFULLY!")
+
+    day_overlap = report_day_overlap(train, val_cal, val_thr, test)
+    print("CAPTURE-FILE (SESSION) DISJOINTNESS, DUAL-CATEGORY COMPOSITION, AND UNIT-ID UNIQUENESS ASSERTIONS PASSED.")
+    if not day_overlap["day_disjoint"]:
+        print(f"NOTE: collection_day is NOT disjoint across partitions by design (see docs/SESSION_CONSTRUCTION.md): {day_overlap['overlaps']}")
 
 def capture_file_grouped_split(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # Extract base trace file name from session_id

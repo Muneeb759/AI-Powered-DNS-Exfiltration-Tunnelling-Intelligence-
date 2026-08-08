@@ -38,90 +38,506 @@
       "2020-11-24",
       "2020-11-25"
     ],
-    "benign_eligible_days": [
+    "days_with_benign_rows": [
       "2020-11-20",
       "2020-11-21",
       "2020-11-22",
       "2020-11-23",
       "2020-11-24"
     ],
-    "ineligible_single_class_days": [
+    "days_with_zero_benign_rows": [
+      "2020-11-25"
+    ],
+    "days_ineligible_as_held_out_test_day": [
       "2020-11-25"
     ]
   },
-  "positive_rows_per_day": {
-    "2020-11-20": {
-      "light": 0,
-      "heavy": 0,
-      "total": 0
-    },
-    "2020-11-21": {
-      "light": 28694,
-      "heavy": 0,
-      "total": 28694
-    },
-    "2020-11-22": {
-      "light": 13989,
-      "heavy": 55542,
-      "total": 69531
-    },
-    "2020-11-23": {
-      "light": 0,
-      "heavy": 49945,
-      "total": 49945
-    },
-    "2020-11-24": {
-      "light": 0,
-      "heavy": 115782,
-      "total": 115782
-    },
-    "2020-11-25": {
-      "light": 0,
-      "heavy": 30401,
-      "total": 30401
-    }
+  "label_counts": {
+    "benign_0": 462858,
+    "positive_exfiltration_1": 294353,
+    "light_positive": 42683,
+    "heavy_positive": 251670
   },
-  "min_resolvable_fpr_session_rule_A": {
-    "2020-11-20": {
-      "benign_sessions": 2,
-      "min_fpr": 0.5
-    },
-    "2020-11-21": {
-      "benign_sessions": 2,
-      "min_fpr": 0.5
-    },
-    "2020-11-22": {
-      "benign_sessions": 1,
-      "min_fpr": 1.0
-    },
-    "2020-11-23": {
-      "benign_sessions": 1,
-      "min_fpr": 1.0
-    },
-    "2020-11-24": {
-      "benign_sessions": 1,
-      "min_fpr": 1.0
-    }
+  "candidate_probes": {
+    "session_id": "None in CSV columns (must be derived or capture-level)",
+    "collection_day": "Recoverable from timestamp column (dates 2020-11-20 to 2020-11-25)",
+    "label": "Derived from directory path (Benign=0, Attacks=1)",
+    "attack_category": "Derived from directory path (benign, light, heavy)",
+    "query_name_sld": "sld column in stateless table, distinct_domains/reverse_dns in stateful table"
   },
-  "constant_columns_dropped": [
-    "NS_frequency",
-    "CNAME_frequency",
-    "SOA_frequency",
-    "NULL_frequency",
-    "HINFO_frequency",
-    "MX_frequency",
-    "SRV_frequency",
-    "OPT_frequency",
-    "a_records",
-    "distinct_ip"
+  "collection_days_present": [
+    "2020-11-20",
+    "2020-11-21",
+    "2020-11-22",
+    "2020-11-23",
+    "2020-11-24"
   ],
-  "corrections_applied": {
-    "C1": "subdomain flag kept as sl_subdomain_flag feature",
-    "C2": "distinct_domains & unique_asn raw strings excluded",
-    "C3": "string set/dict reprs converted to numeric cardinality counts",
-    "C4": "derived features added (sl_longest_word_len, sf_reverse_dns_known)",
-    "C5": "10 constant columns dropped",
-    "C6": "calendar day count (6) vs benign day count (5) reconciled",
-    "C7": "2020-11-25 marked INELIGIBLE as held-out test day"
-  }
+  "benign_row_counts_by_day": {
+    "2020-11-20": 142138,
+    "2020-11-21": 139026,
+    "2020-11-22": 61567,
+    "2020-11-23": 49115,
+    "2020-11-24": 71012
+  },
+  "min_resolvable_fpr_by_day": {
+    "2020-11-20": 7.035416285581618e-06,
+    "2020-11-21": 7.192899169939436e-06,
+    "2020-11-22": 1.6242467555671058e-05,
+    "2020-11-23": 2.0360378703043877e-05,
+    "2020-11-24": 1.4082126964456711e-05
+  },
+  "planned_operating_point_fpr": 0.001,
+  "fpr_0.1_percent_measurable": true,
+  "layout_risk": {
+    "organized_by_file_type": true,
+    "directory_mapping": {
+      "Attack_heavy_Benign/Attacks": {
+        "label": 1,
+        "attack_category": "heavy"
+      },
+      "Attack_Light_Benign/Attacks": {
+        "label": 1,
+        "attack_category": "light"
+      },
+      "Attack_heavy_Benign/Benign": {
+        "label": 0,
+        "attack_category": "benign"
+      },
+      "Attack_Light_Benign/Benign": {
+        "label": 0,
+        "attack_category": "benign"
+      },
+      "Benign": {
+        "label": 0,
+        "attack_category": "benign"
+      }
+    }
+  },
+  "stateless_schema": {
+    "timestamp": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 756682,
+      "sample_values": [
+        "2020-11-22 14:52:31.248351",
+        "2020-11-22 14:52:31.658668",
+        "2020-11-22 14:52:31.898872"
+      ]
+    },
+    "FQDN_count": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 35,
+      "sample_values": [
+        "25",
+        "15",
+        "24"
+      ]
+    },
+    "subdomain_length": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 26,
+      "sample_values": [
+        "8",
+        "0",
+        "7"
+      ]
+    },
+    "upper": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 6,
+      "sample_values": [
+        "0",
+        "11",
+        "32"
+      ]
+    },
+    "lower": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 34,
+      "sample_values": [
+        "10",
+        "0",
+        "12"
+      ]
+    },
+    "numeric": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 14,
+      "sample_values": [
+        "9",
+        "3",
+        "8"
+      ]
+    },
+    "entropy": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 1660,
+      "sample_values": [
+        "2.556641667147437",
+        "3.625",
+        "2.054028744215725"
+      ]
+    },
+    "special": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 9,
+      "sample_values": [
+        "6",
+        "1",
+        "4"
+      ]
+    },
+    "labels": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 7,
+      "sample_values": [
+        "6",
+        "1",
+        "3"
+      ]
+    },
+    "labels_max": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 31,
+      "sample_values": [
+        "7",
+        "15",
+        "5"
+      ]
+    },
+    "labels_average": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 83,
+      "sample_values": [
+        "3.333333333333333",
+        "15.0",
+        "3.1666666666666665"
+      ]
+    },
+    "longest_word": {
+      "dtype": "object",
+      "null_count": 31,
+      "nunique": 18001,
+      "sample_values": [
+        "2",
+        "C",
+        "4"
+      ]
+    },
+    "sld": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 67628,
+      "sample_values": [
+        "192",
+        "DESKTOP-3JF04TC",
+        "224"
+      ]
+    },
+    "len": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 33,
+      "sample_values": [
+        "12",
+        "16",
+        "11"
+      ]
+    },
+    "subdomain": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 2,
+      "sample_values": [
+        "1",
+        "0"
+      ]
+    }
+  },
+  "stateful_schema": {
+    "rr": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 11,
+      "sample_values": [
+        "0.0",
+        "1.0",
+        "2.0"
+      ]
+    },
+    "A_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 10,
+      "sample_values": [
+        "0",
+        "1",
+        "2"
+      ]
+    },
+    "NS_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "CNAME_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "SOA_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "NULL_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "PTR_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 19,
+      "sample_values": [
+        "2",
+        "0",
+        "7"
+      ]
+    },
+    "HINFO_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "MX_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "TXT_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 2,
+      "sample_values": [
+        "0",
+        "1"
+      ]
+    },
+    "AAAA_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 2,
+      "sample_values": [
+        "0",
+        "2"
+      ]
+    },
+    "SRV_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "OPT_frequency": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "rr_type": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 6,
+      "sample_values": [
+        "{'PTR'}",
+        "set()",
+        "{'A'}"
+      ]
+    },
+    "rr_count": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 7,
+      "sample_values": [
+        "0",
+        "1",
+        "2"
+      ]
+    },
+    "rr_name_entropy": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 105411,
+      "sample_values": [
+        "3.146083993626608",
+        "2.6890190083372705",
+        "3.102730590380101"
+      ]
+    },
+    "rr_name_length": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 35,
+      "sample_values": [
+        "25",
+        "15",
+        "24"
+      ]
+    },
+    "distinct_ns": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 4,
+      "sample_values": [
+        "0",
+        "1",
+        "2"
+      ]
+    },
+    "distinct_ip": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "set()"
+      ]
+    },
+    "unique_country": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 164,
+      "sample_values": [
+        "set()",
+        "{'US'}",
+        "{'DE'}"
+      ]
+    },
+    "unique_asn": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 5643,
+      "sample_values": [
+        "set()",
+        "{'AS15169'}",
+        "{'AS3598'}"
+      ]
+    },
+    "distinct_domains": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 57658,
+      "sample_values": [
+        "{}",
+        "{'172.217.164.227': {'ssl.gstatic.com'}}",
+        "{'131.107.255.255': {'dns.msftncsi.com'}}"
+      ]
+    },
+    "reverse_dns": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 23423,
+      "sample_values": [
+        "unknown",
+        "yyz12s05-in-f3.1e100.net",
+        "dns.msftncsi.com"
+      ]
+    },
+    "a_records": {
+      "dtype": "int64",
+      "null_count": 0,
+      "nunique": 1,
+      "sample_values": [
+        "0"
+      ]
+    },
+    "unique_ttl": {
+      "dtype": "object",
+      "null_count": 0,
+      "nunique": 81,
+      "sample_values": [
+        "[1, 1]",
+        "[1]",
+        "[1, 1, 1, 1, 1, 1, 1]"
+      ]
+    },
+    "ttl_mean": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 19,
+      "sample_values": [
+        "1.0",
+        "255.0",
+        "128.0"
+      ]
+    },
+    "ttl_variance": {
+      "dtype": "float64",
+      "null_count": 0,
+      "nunique": 12,
+      "sample_values": [
+        "0.0",
+        "9.0",
+        "8.0"
+      ]
+    }
+  },
+  "shortcut_candidates": [
+    {
+      "column": "timestamp",
+      "reason": "Direct timestamp leaks temporal/collection-day context"
+    },
+    {
+      "column": "sld",
+      "reason": "Raw registrable domain identity leaks testbed infrastructure identity"
+    },
+    {
+      "column": "longest_word",
+      "reason": "Subdomain text token derived from raw query name"
+    },
+    {
+      "column": "subdomain",
+      "reason": "Raw query string / subdomain derivative"
+    },
+    {
+      "column": "distinct_ip",
+      "reason": "Constant / IP identity feature in stateful table"
+    },
+    {
+      "column": "reverse_dns",
+      "reason": "Reverse DNS domain string in stateful table"
+    }
+  ]
 }

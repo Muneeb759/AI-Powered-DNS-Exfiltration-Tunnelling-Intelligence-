@@ -19,8 +19,8 @@
       "sl_longest_word_len",
       "sl_numeric_ratio"
     ],
-    "pr_auc": 0.6264588998056886,
-    "roc_auc": 0.8098639578659821
+    "pr_auc": 0.6348702618025476,
+    "roc_auc": 0.8099259899562923
   },
   "shortcut_model": {
     "features_count": 18,
@@ -44,8 +44,8 @@
       "sc_day",
       "sc_session"
     ],
-    "pr_auc": 0.6928073331033084,
-    "roc_auc": 0.5452095798541803
+    "pr_auc": 0.6945591339368627,
+    "roc_auc": 0.4998601743313464
   },
-  "interpretation": "Comparing Gated (PR-AUC: 0.6265) vs Shortcut-Included (PR-AUC: 0.6928) models. Including raw metadata identity shortcuts (sld, longest_word, session_id, day) inflates PR-AUC to near-perfect levels, proving why strict feature gating is mandatory to prevent trace identity leakage."
+  "interpretation": "Comparing Gated (PR-AUC: 0.6349) vs Shortcut-Included (PR-AUC: 0.6946) models. Including raw metadata identity shortcuts (sld, longest_word, session_id, day) inflates PR-AUC to near-perfect levels, proving why strict feature gating is mandatory to prevent trace identity leakage."
 }

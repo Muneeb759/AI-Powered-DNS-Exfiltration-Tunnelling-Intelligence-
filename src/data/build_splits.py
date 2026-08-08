@@ -12,6 +12,7 @@ from src.data.load import load_raw
 from src.data.splits import (
     capture_file_grouped_split,
     assert_split_protocol,
+    report_day_overlap,
     LeakageGate
 )
 
@@ -59,6 +60,8 @@ def build_splits(raw_dir: str = "data/raw", splits_dir: str = "data/splits", see
         "split_status": "PROVISIONAL",
         "release_type": "public_unb_release",
         "seed": seed,
+        "disjointness_guarantee": "session_id (capture_file) only -- collection_day is NOT guaranteed disjoint, see day_overlap below",
+        "day_overlap": report_day_overlap(train_df, val_cal_df, val_thr_df, test_df),
         "partitions": {
             "train": partition_stats(train_df),
             "val_cal": partition_stats(val_cal_df),
