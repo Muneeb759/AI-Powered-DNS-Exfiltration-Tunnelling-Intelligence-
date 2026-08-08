@@ -34,7 +34,10 @@ demoted as a result — including a PR-AUC 0.99999 model we withdrew.
 
 ## Setup
 
-Requires Python 3.11+ (verified on 3.12.5).
+**Python 3.11 or 3.12. Built and verified on 3.12.5.**
+The floor is set by `numpy==2.3.2`, which requires `>=3.11` — Python 3.10 or earlier will fail to
+resolve. Python 3.13 is untested here: the pins may not have wheels for it, in which case pip
+would attempt a source build. If you are on 3.13 and hit a build error, use 3.12.
 
 ```bash
 python -m venv .venv
@@ -56,12 +59,25 @@ pip install -r requirements-demo.txt
 ### Obtain the dataset
 
 **This repository does not redistribute the dataset.** Download CIC-Bell-DNS-EXF-2021 from the
-[official UNB page](https://www.unb.ca/cic/datasets/dns-exf-2021.html) and extract it so that:
+[official UNB page](https://www.unb.ca/cic/datasets/dns-exf-2021.html) and extract it into
+`data/raw/` so the tree looks exactly like this (7 directories, 36 CSVs):
 
 ```
-data/raw/Benign/stateless_features-benign_*.pcap.csv
-data/raw/Attack_heavy_Benign/...
-data/raw/Attack_Light_Benign/...
+data/raw/
+├── Benign/                              # 12 files: stateless_features-benign_*.pcap.csv
+│                                        #           stateful_features-benign_*.pcap.csv
+├── Attack_heavy_Benign/
+│   ├── Attacks/                         # stateless_features-heavy_*.pcap.csv  (+ stateful_)
+│   └── Benign/                          # stateless_features-benign_heavy_*.pcap.csv (+ stateful_)
+└── Attack_Light_Benign/
+    ├── Attacks/                         # stateless_features-light_*.pcap.csv  (+ stateful_)
+    └── Benign/                          # stateless_features-benign_light_*.pcap.csv (+ stateful_)
+```
+
+Check it resolved correctly — this must print `36`:
+
+```bash
+find data/raw -name "*.csv" | wc -l
 ```
 
 36 CSV files, 103,384,358 bytes total. Per-file SHA-256 checksums are recorded in
@@ -79,6 +95,13 @@ python scripts/reproduce.py
 ```
 
 Expected output ends with `PASS: reproduced values match report/TECHNICAL_REPORT.md section 7.`
+
+**What this does:** loads the *committed* model artifact `models/stateless_lgbm_v1.pkl` (tracked in
+git — no retraining, so the result does not depend on your thread count or hardware) and scores
+the test partition at the published threshold. On a fresh clone it first builds
+`data/splits/*.parquet` from `data/raw/`, which takes about a minute and is deterministic
+(seed `20260808`, sorted grouping). Splits are git-ignored, which is why the dataset is required
+even though the model is not retrained.
 
 To rebuild splits and retrain from raw data first (slower, fully from scratch):
 
