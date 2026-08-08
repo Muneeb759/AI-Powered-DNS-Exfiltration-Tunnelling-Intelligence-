@@ -4,20 +4,39 @@ from typing import List, Dict, Any, Callable, Tuple
 from sklearn.metrics import precision_recall_curve, auc, roc_auc_score, confusion_matrix
 
 def pick_threshold_at_fpr(y_true: np.ndarray, scores: np.ndarray, target_fpr: float = 0.001) -> float:
+    """Picks the smallest threshold t such that count(benign_scores >= t) <= max_fp, i.e. the
+    achieved FPR never exceeds target_fpr. Ties matter here: if many benign scores share the
+    exact value that would sit at the max_fp-th rank (e.g. a coarse/plateaued calibrator), naively
+    using that tied value as the threshold admits the WHOLE tied block, not just the intended
+    max_fp of them, and can blow the FPR far past target. This walks up to the next strictly
+    higher distinct score instead, trading a bit of recall for actually respecting the FPR budget."""
     y_true = np.asarray(y_true)
     scores = np.asarray(scores)
-    
+
     neg_scores = scores[y_true == 0]
-    if len(neg_scores) == 0:
+    n_neg = len(neg_scores)
+    if n_neg == 0:
         raise ValueError("No negative/benign samples present to compute FPR threshold")
-        
-    sorted_neg = np.sort(neg_scores)
-    max_fp = int(np.floor(target_fpr * len(sorted_neg)))
-    if max_fp == 0:
-        threshold = float(sorted_neg[-1])
-    else:
-        threshold = float(sorted_neg[-max_fp])
-    return threshold
+
+    max_fp = int(np.floor(target_fpr * n_neg))
+    distinct_desc = np.unique(neg_scores)[::-1]
+
+    if max_fp <= 0:
+        # Budget doesn't even allow the single highest benign score through.
+        return float(np.nextafter(distinct_desc[0], np.inf))
+
+    # count_ge(candidate) is monotonically non-decreasing as candidate decreases, so walk down
+    # from the highest score and keep the LOWEST candidate seen so far that still respects the
+    # budget -- that's the threshold maximizing recall without exceeding target_fpr. Stop at the
+    # first violation since everything lower would violate it too.
+    best = float(np.nextafter(distinct_desc[0], np.inf))
+    for candidate in distinct_desc:
+        count_ge = int(np.sum(neg_scores >= candidate))
+        if count_ge <= max_fp:
+            best = float(candidate)
+        else:
+            break
+    return best
 
 def point_metrics(y_true: np.ndarray, scores: np.ndarray, threshold: float) -> Dict[str, float]:
     y_true = np.asarray(y_true)
