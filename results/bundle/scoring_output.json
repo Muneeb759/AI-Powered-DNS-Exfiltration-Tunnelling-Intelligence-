@@ -1,0 +1,308 @@
+{
+  "primary_system": {
+    "name": "v1 stateless row-level detector",
+    "model_version": "stateless_lgbm_v1",
+    "decision_unit": "row (individual DNS query)",
+    "headline_operating_point": {
+      "threshold": 0.713607050540105,
+      "combined": {
+        "threshold": 0.713607050540105,
+        "tp": 4235,
+        "fp": 2535,
+        "tn": 59032,
+        "fn": 35039,
+        "fpr": 0.04117465525362613,
+        "tpr": 0.10783215358761522,
+        "recall": 0.10783215358761522,
+        "precision": 0.6255539143279173,
+        "f1": 0.18395447832508038,
+        "accuracy": 0.6273936196586706,
+        "false_alerts_per_10k_benign": 411.74655253626133
+      },
+      "light": {
+        "threshold": 0.713607050540105,
+        "tp": 370,
+        "fp": 2535,
+        "tn": 59032,
+        "fn": 3109,
+        "fpr": 0.04117465525362613,
+        "tpr": 0.10635240011497557,
+        "recall": 0.10635240011497557,
+        "precision": 0.12736660929432014,
+        "f1": 0.11591478696741854,
+        "accuracy": 0.9132306367801248,
+        "false_alerts_per_10k_benign": 411.74655253626133
+      },
+      "heavy": {
+        "threshold": 0.713607050540105,
+        "tp": 3865,
+        "fp": 2535,
+        "tn": 59032,
+        "fn": 31930,
+        "fpr": 0.04117465525362613,
+        "tpr": 0.10797597429808632,
+        "recall": 0.10797597429808632,
+        "precision": 0.60390625,
+        "f1": 0.18319706126318283,
+        "accuracy": 0.6460117910478421,
+        "false_alerts_per_10k_benign": 411.74655253626133
+      }
+    },
+    "post_cliff_operating_point": {
+      "threshold": 0.7124161589841883,
+      "note": "higher-recall alternative; no operating point exists between these two (15-point unreachable FPR band from score quantization -- see report section 7)",
+      "combined": {
+        "threshold": 0.7124161589841883,
+        "tp": 18483,
+        "fp": 11050,
+        "tn": 50517,
+        "fn": 20791,
+        "fpr": 0.17947926649016518,
+        "tpr": 0.4706166929775424,
+        "recall": 0.4706166929775424,
+        "precision": 0.62584227812955,
+        "f1": 0.5372418503931287,
+        "accuracy": 0.6842454953838221,
+        "false_alerts_per_10k_benign": 1794.7926649016517
+      },
+      "light": {
+        "threshold": 0.7124161589841883,
+        "tp": 1608,
+        "fp": 11050,
+        "tn": 50517,
+        "fn": 1871,
+        "fpr": 0.17947926649016518,
+        "tpr": 0.4622017821212992,
+        "recall": 0.4622017821212992,
+        "precision": 0.1270342866171591,
+        "f1": 0.1992935489868005,
+        "accuracy": 0.8013559634720044,
+        "false_alerts_per_10k_benign": 1794.7926649016517
+      },
+      "heavy": {
+        "threshold": 0.7124161589841883,
+        "tp": 16875,
+        "fp": 11050,
+        "tn": 50517,
+        "fn": 18920,
+        "fpr": 0.17947926649016518,
+        "tpr": 0.4714345578991479,
+        "recall": 0.4714345578991479,
+        "precision": 0.6042972247090421,
+        "f1": 0.5296610169491526,
+        "accuracy": 0.6921797004991681,
+        "false_alerts_per_10k_benign": 1794.7926649016517
+      }
+    },
+    "ranking_metrics": {
+      "pr_auc_headline": 0.6269104887077445,
+      "roc_auc_supplementary": 0.8097207725781099
+    }
+  },
+  "mandatory_non_ml_baseline": {
+    "name": "signed z(sl_len) + z(sl_entropy) rule",
+    "model_version": "rule_baseline_v1",
+    "metrics": {
+      "rule": "z(sl_len) + z(sl_entropy), normalization fit on train only",
+      "rule_stats": {
+        "sl_len": {
+          "mean": 12.051939964294434,
+          "std": 4.249671936035156,
+          "sign": 1.0,
+          "train_benign_mean": 11.552481651306152,
+          "train_attack_mean": 13.178197860717773
+        },
+        "sl_entropy": {
+          "mean": 2.47312068939209,
+          "std": 0.4367523491382599,
+          "sign": -1.0,
+          "train_benign_mean": 2.4868831634521484,
+          "train_attack_mean": 2.442087411880493
+        }
+      },
+      "operating_fpr_target": 0.001,
+      "threshold": 5.380054295063019,
+      "combined": {
+        "pr_auc": 0.5225802107082032,
+        "roc_auc_supplementary": 0.7002719694781164,
+        "threshold": 5.380054295063019,
+        "tp": 90,
+        "fp": 33,
+        "tn": 61534,
+        "fn": 39184,
+        "fpr": 0.0005360014293371449,
+        "tpr": 0.00229159240209808,
+        "recall": 0.00229159240209808,
+        "precision": 0.7317073170731707,
+        "f1": 0.004568875802726096,
+        "accuracy": 0.6111006435874298,
+        "false_alerts_per_10k_benign": 5.3600142933714485
+      },
+      "light": {
+        "pr_auc": 0.09140615459074405,
+        "roc_auc_supplementary": 0.6987893871259457,
+        "threshold": 5.380054295063019,
+        "tp": 12,
+        "fp": 33,
+        "tn": 61534,
+        "fn": 3467,
+        "fpr": 0.0005360014293371449,
+        "tpr": 0.0034492670307559644,
+        "recall": 0.0034492670307559644,
+        "precision": 0.26666666666666666,
+        "f1": 0.00681044267877412,
+        "accuracy": 0.94619192571411,
+        "false_alerts_per_10k_benign": 5.3600142933714485
+      },
+      "heavy": {
+        "pr_auc": 0.4996500709442169,
+        "roc_auc_supplementary": 0.7004160651340237,
+        "threshold": 5.380054295063019,
+        "tp": 78,
+        "fp": 33,
+        "tn": 61534,
+        "fn": 35717,
+        "fpr": 0.0005360014293371449,
+        "tpr": 0.0021790752898449505,
+        "recall": 0.0021790752898449505,
+        "precision": 0.7027027027027027,
+        "f1": 0.004344677769732078,
+        "accuracy": 0.6328136233848934,
+        "false_alerts_per_10k_benign": 5.3600142933714485
+      }
+    }
+  },
+  "supporting_track2_cascade": {
+    "model_version": "cascade_over_stateless_lgbm_v1",
+    "decision_unit": "row-level Stage 1, session-level Stage 2 confirmation",
+    "metrics": {
+      "pct_test_rows_escalated_to_stage2": 0.3894646026913656,
+      "one_stage_stage1_only": {
+        "tp": 90,
+        "fp": 50,
+        "fn": 39184,
+        "tn": 61517,
+        "recall": 0.00229159240209808,
+        "fpr": 0.0008121233777835529,
+        "precision": 0.6428571428571429,
+        "false_alerts_per_10k_benign": 8.12123377783553
+      },
+      "two_stage_cascade": {
+        "tp": 39274,
+        "fp": 50,
+        "fn": 0,
+        "tn": 61517,
+        "recall": 1.0,
+        "fpr": 0.0008121233777835529,
+        "precision": 0.9987285118502696,
+        "false_alerts_per_10k_benign": 8.12123377783553
+      },
+      "light_only": {
+        "one_stage": {
+          "tp": 8,
+          "fn": 3471,
+          "recall": 0.0022995113538373095
+        },
+        "two_stage": {
+          "tp": 3479,
+          "fn": 0,
+          "recall": 1.0
+        }
+      },
+      "heavy_only": {
+        "one_stage": {
+          "tp": 82,
+          "fn": 35713,
+          "recall": 0.00229082274060623
+        },
+        "two_stage": {
+          "tp": 35795,
+          "fn": 0,
+          "recall": 1.0
+        }
+      },
+      "escalation_margins": {
+        "benign_heavy_1": {
+          "r_sus": 0.3796027092435883,
+          "label": 0,
+          "margin_to_delta": -0.1203972907564117,
+          "escalated": false
+        },
+        "heavy_audio": {
+          "r_sus": 0.9996647576477161,
+          "label": 1,
+          "margin_to_delta": 0.4996647576477161,
+          "escalated": true
+        },
+        "light_text": {
+          "r_sus": 0.9997125610807703,
+          "label": 1,
+          "margin_to_delta": 0.49971256108077033,
+          "escalated": true
+        }
+      }
+    }
+  },
+  "reported_experiment_window_alerting": {
+    "config_version": "window_N200_t0.714257_kn0.1",
+    "decision_unit": "non-overlapping 200-row window within one session_id",
+    "metrics_on_pure_captures": {
+      "tp": 90,
+      "fp": 13,
+      "fn": 107,
+      "tn": 295,
+      "recall": 0.45685279187817257,
+      "fpr": 0.04220779220779221,
+      "precision": 0.8737864077669902,
+      "n_benign_windows": 308,
+      "false_alerts_per_10k_benign_windows": 422.0779220779221
+    },
+    "mixed_traffic_stress_test": {
+      "0.02": {
+        "tp": 59,
+        "fp": 0,
+        "fn": 265,
+        "tn": 0,
+        "recall": 0.18209876543209877,
+        "fpr": 0.0,
+        "precision": 1.0,
+        "n_benign_windows": 0,
+        "false_alerts_per_10k_benign_windows": 0.0
+      },
+      "0.05": {
+        "tp": 37,
+        "fp": 0,
+        "fn": 287,
+        "tn": 0,
+        "recall": 0.11419753086419752,
+        "fpr": 0.0,
+        "precision": 1.0,
+        "n_benign_windows": 0,
+        "false_alerts_per_10k_benign_windows": 0.0
+      },
+      "0.1": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 324,
+        "tn": 0,
+        "recall": 0.0,
+        "fpr": 0.0,
+        "precision": 0.0,
+        "n_benign_windows": 0,
+        "false_alerts_per_10k_benign_windows": 0.0
+      },
+      "0.25": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 324,
+        "tn": 0,
+        "recall": 0.0,
+        "fpr": 0.0,
+        "precision": 0.0,
+        "n_benign_windows": 0,
+        "false_alerts_per_10k_benign_windows": 0.0
+      }
+    },
+    "note": "NOT adopted as the alerting unit -- fails under diluted/interleaved attack traffic. See report section 8 and section 9."
+  }
+}

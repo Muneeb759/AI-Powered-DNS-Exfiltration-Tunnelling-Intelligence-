@@ -1,0 +1,84 @@
+{
+  "principle": "Every threshold is selected on a validation partition only. test is scored once, at the already-chosen operating point, and never used for selection.",
+  "v1_row_level_headline": {
+    "threshold": 0.713607050540105,
+    "selected_on": "val_thr",
+    "selection_rule": "highest-recall achievable operating point below the unreachable FPR band (val_thr FPR 4.40%); thresholds enumerated from distinct val_thr benign score values, not a fixed target-FPR grid",
+    "val_thr_fpr": 0.04397848250999831,
+    "test_fpr_achieved": 0.04117,
+    "artifact": "results/metrics/operating_points_v1.json"
+  },
+  "v1_row_level_post_cliff": {
+    "threshold": 0.7124161589841883,
+    "selected_on": "val_thr",
+    "selection_rule": "first achievable point above the 15-point unreachable FPR band",
+    "val_thr_fpr": 0.1941784487128936,
+    "test_fpr_achieved": 0.17948
+  },
+  "rule_baseline": {
+    "threshold": 5.380054295063019,
+    "selected_on": "val_thr",
+    "selection_rule": "FPR=0.1% target via pick_threshold_at_fpr",
+    "normalization_and_sign_fit_on": "train only",
+    "fitted_stats": {
+      "sl_len": {
+        "mean": 12.051939964294434,
+        "std": 4.249671936035156,
+        "sign": 1.0,
+        "train_benign_mean": 11.552481651306152,
+        "train_attack_mean": 13.178197860717773
+      },
+      "sl_entropy": {
+        "mean": 2.47312068939209,
+        "std": 0.4367523491382599,
+        "sign": -1.0,
+        "train_benign_mean": 2.4868831634521484,
+        "train_attack_mean": 2.442087411880493
+      }
+    }
+  },
+  "cascade_escalation_delta": {
+    "delta": 0.5,
+    "selected_on": "val_thr (3 sessions -- explicitly small-N)",
+    "selection_rule": "smallest delta that escalates the positive session(s) without escalating every session",
+    "suspicious_score_cut": 0.4
+  },
+  "window_alerting": {
+    "N": 200,
+    "t": 0.7142572903774336,
+    "k_over_N": 0.1,
+    "selected_on": "val_thr",
+    "selection_rule": "grid search over N x t x k/N on val_thr; chosen for val->test stability, not peak val recall",
+    "artifact": "results/metrics/window_alerting_report.json"
+  },
+  "unreachable_fpr_bands": [
+    {
+      "from_val_fpr": 0.010350363318875682,
+      "to_val_fpr": 0.04217597025854785,
+      "unreachable_band_width": 0.031825606939672166,
+      "from_threshold": 0.7181241315278297,
+      "to_threshold": 0.7142572903774336
+    },
+    {
+      "from_val_fpr": 0.04397848250999831,
+      "to_val_fpr": 0.1941784487128936,
+      "unreachable_band_width": 0.1501999662028953,
+      "from_threshold": 0.713607050540105,
+      "to_threshold": 0.7124161589841883
+    },
+    {
+      "from_val_fpr": 0.20017743479975214,
+      "to_val_fpr": 0.21628738804709063,
+      "unreachable_band_width": 0.016109953247338493,
+      "from_threshold": 0.7094091582084725,
+      "to_threshold": 0.7091050986327234
+    },
+    {
+      "from_val_fpr": 0.21932912747141328,
+      "to_val_fpr": 0.30261082633921027,
+      "unreachable_band_width": 0.08328169886779699,
+      "from_threshold": 0.7090914545472472,
+      "to_threshold": 0.7090645673881498
+    }
+  ]
+}

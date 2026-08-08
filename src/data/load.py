@@ -31,16 +31,26 @@ def load_raw(raw_dir: str = "data/raw", schema_path: str = "configs/schema.lock.
             
         df["label"] = np.int8(lbl)
         df["attack_category"] = pd.Categorical([cat] * len(df), categories=["benign", "light", "heavy"])
-        
+
+        # unit_id is assigned HERE -- before any row filtering -- so the trailing index is the
+        # row's position in the SOURCE CSV, making every unit_id resolvable back to an exact
+        # line of the original file by construction rather than by coincidence. Assigning it
+        # after the 2020-11-25 filter (as this previously did) silently re-indexes the kept
+        # rows; that happened to be harmless only because every excluded row in this snapshot
+        # sits contiguously at the end of the single affected file (heavy_exe). Interleaved
+        # exclusions would have shifted every subsequent id onto the wrong source line with
+        # nothing to catch it. tests/test_unit_id_traceability.py locks this in.
+        df["unit_id"] = [f"{rel_path}_{i}" for i in range(len(df))]
+
         # Parse timestamp to collection_day
         ts_parsed = pd.to_datetime(df["timestamp"], format="mixed")
         df["collection_day"] = ts_parsed.dt.date.astype(str)
-        
+
         # Exclude single-class day 2020-11-25 per S5
         df = df[df["collection_day"] != "2020-11-25"].copy()
         if len(df) == 0:
             continue
-            
+
         # Grouping session key (capture file + collection day segment)
         df["session_id"] = [f"{rel_path}::{day}" for day in df["collection_day"]]
         
@@ -64,10 +74,7 @@ def load_raw(raw_dir: str = "data/raw", schema_path: str = "configs/schema.lock.
         
         num_ratio = df["numeric"] / np.maximum(df["FQDN_count"].astype(np.float32), 1.0)
         df["sl_numeric_ratio"] = num_ratio.astype(np.float32)
-        
-        # Create unique unit_id
-        df["unit_id"] = [f"{rel_path}_{i}" for i in range(len(df))]
-        
+
         # Select canonical columns + stateless features
         cols = [
             "unit_id", "session_id", "collection_day", "label", "attack_category"

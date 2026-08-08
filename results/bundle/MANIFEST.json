@@ -1,0 +1,43 @@
+{
+  "bundle_name": "CIC-Bell-DNS-EXF-2021 detection results bundle",
+  "team": "Muneeb + Serena",
+  "declared_primary_track": "Track 1 -- Detection & Alert Prioritization",
+  "supporting_tracks": [
+    "Track 2 cascade (interpretability layer)",
+    "Track 3 analyst case view"
+  ],
+  "test_id_column": "unit_id",
+  "test_id_note": "unit_id is pipeline-assigned, not dataset-native. CIC-Bell-DNS-EXF-2021 CSVs contain no key column, and Sofstica confirmed on the hackathon Discord (2026-08-08) that no organizer split manifest exists, so these are the IDs of record for this submission. Construction: {capture_file_relative_path}_{row_index}, where the index is the row's position in the source CSV. Assignment happens before any row filtering, so line-traceability holds by construction; tests/test_unit_id_traceability.py verifies the mapping. IDs are deterministic across reruns but not stable across changes to the exclusion policy or a re-export with different row ordering.",
+  "n_test_rows": 100841,
+  "n_test_windows": 505,
+  "model_and_config_versions": {
+    "primary_detector": "stateless_lgbm_v1",
+    "baseline": "rule_baseline_v1",
+    "cascade": "cascade_over_stateless_lgbm_v1",
+    "window_alerting": "window_N200_t0.714257_kn0.1",
+    "seed": 20260808
+  },
+  "rejected_not_submitted": {
+    "stateless_lgbm_v2": "Session-repeat feature model (PR-AUC 0.99999) -- REJECTED, not part of this bundle. Failed a mixed-session stress test (PR-AUC collapsed to 0.082). Artifacts retained in results/metrics/*_v2_rejected.json as evidence for report section 9. Not a submitted result."
+  },
+  "environment": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
+    "cpu_count_logical": 12,
+    "python_version": "3.12.5",
+    "lightgbm_version": "4.7.0",
+    "scikit_learn_version": "1.7.2",
+    "numpy_version": "2.3.2",
+    "concurrency": 1,
+    "concurrency_note": "single-threaded, sequential calls -- no concurrent/async execution measured"
+  },
+  "dataset_provenance": "see results/metrics/provenance.json (per-file SHA-256) and deliverables/DATA_AND_MODEL_STATEMENT.md",
+  "file_checksums_sha256": {
+    "predictions_primary_row_level.csv": "5d14de31af3e27c4dae54ab52e23cec44c40171453649acaa7b2a13f3a672382",
+    "predictions_baseline_rule.csv": "761da70d0c61fbc995cbb4cf9e6618540a714da80009687e0796308c03cd557c",
+    "predictions_cascade_row_level.csv": "27f687a5443526ca76378909db1c2146b5300c44132ee87178aeae888326d6f9",
+    "predictions_window_level.csv": "7869565bfe599d780721e5fa76010119ae97c100f65dc5b3c8220a5f2a763629",
+    "scoring_output.json": "95d703ec83b22a6b698e7803fcf6e70f675df0bcf4877a6299cd2a2154c22ac5",
+    "threshold_selection_record.json": "5a22c1e6b1524d38ba8d8c5e3f91bec9db878cf6eb37e13c387b5b78210f64ce"
+  }
+}
