@@ -16,13 +16,16 @@ that's still coming. `split_status` in `results/metrics/split_summary.json` shou
 
 ## Task list
 
-1. **Leave-one-day-out robustness check (mandatory per the challenge brief).**
-   The brief requires: *"Test across collection days. Report the organizer's held-out-day or
-   leave-one-day-out robustness result in addition to any development split."* This is separate from
-   the dev split (`train`/`val_cal`/`val_thr`/`test`) built in Phase 1, which is intentionally NOT
-   day-disjoint (see `docs/SESSION_CONSTRUCTION.md`). Needs its own evaluation loop: hold out each
-   eligible collection day in turn (`2020-11-20` through `2020-11-24`; `2020-11-25` is excluded, zero
-   benign rows), train/score on the rest, report recall/PR-AUC variation across folds. Not yet built.
+1. **Leave-one-day-out robustness check (mandatory per the challenge brief). DONE.**
+   Implemented in `src/eval/loto.py`, results in `results/metrics/leave_one_day_out_report.json`.
+   Trains a fresh LightGBM per held-out day (5 eligible days; `2020-11-25` excluded, zero benign
+   rows), threshold picked in-sample on the training fold (documented simplification — only 18
+   sessions total, not enough left per fold for a clean nested val split; this does not replace the
+   out-of-sample threshold protocol used for the headline stateless model).
+   **Finding:** fold-to-fold PR-AUC ranges 0.34–0.80 (std 0.18). The light-attack-only day
+   (`2020-11-21`) is the weakest fold by a wide margin (PR-AUC 0.34) versus the heavy-only days
+   (0.71–0.80) — concrete evidence for the report's failure-analysis section that light attacks are
+   the harder detection problem, not just an assertion from the plan doc.
 
 2. **Rule baseline (mandatory per brief).** Threshold on query length + Shannon entropy of the query
    name. Tune threshold on validation only (`val_thr`). Document the exact rule and threshold.
