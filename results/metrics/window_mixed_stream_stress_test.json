@@ -1,0 +1,73 @@
+{
+  "description": "Stress test: synthetic capture interleaving benign rows with a low-rate attack stream (1 attack row per 20 benign rows), preserving relative order within each source -- the closest available approximation of the brief own real session mixing normal queries with a slow low-volume exfil channel.",
+  "source_sessions": {
+    "benign": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
+    "attack": "Attack_Light_Benign/Attacks/stateless_features-light_text.pcap.csv::2020-11-22"
+  },
+  "interleave_rate": "1 attack row per 20 benign rows",
+  "n_rows": 64638,
+  "n_attack_rows": 3078,
+  "window_params": {
+    "N": 200,
+    "t": 0.7143
+  },
+  "result_by_k_over_N": {
+    "0.02": {
+      "tp": 59,
+      "fp": 0,
+      "fn": 265,
+      "tn": 0,
+      "recall": 0.18209876543209877,
+      "fpr": 0.0,
+      "precision": 1.0,
+      "n_benign_windows": 0,
+      "false_alerts_per_10k_benign_windows": 0.0
+    },
+    "0.05": {
+      "tp": 37,
+      "fp": 0,
+      "fn": 287,
+      "tn": 0,
+      "recall": 0.11419753086419752,
+      "fpr": 0.0,
+      "precision": 1.0,
+      "n_benign_windows": 0,
+      "false_alerts_per_10k_benign_windows": 0.0
+    },
+    "0.1": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 324,
+      "tn": 0,
+      "recall": 0.0,
+      "fpr": 0.0,
+      "precision": 0.0,
+      "n_benign_windows": 0,
+      "false_alerts_per_10k_benign_windows": 0.0
+    },
+    "0.25": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 324,
+      "tn": 0,
+      "recall": 0.0,
+      "fpr": 0.0,
+      "precision": 0.0,
+      "n_benign_windows": 0,
+      "false_alerts_per_10k_benign_windows": 0.0
+    }
+  },
+  "chosen_operating_point_k_over_N_0.1_result": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 324,
+    "tn": 0,
+    "recall": 0.0,
+    "fpr": 0.0,
+    "precision": 0.0,
+    "n_benign_windows": 0,
+    "false_alerts_per_10k_benign_windows": 0.0
+  },
+  "max_fraction_exceeding_in_any_attack_containing_window": 0.085,
+  "verdict": "FAILS at the chosen operating point (k/N=0.1): 0% recall, the diluted attack stream never pushes fraction_exceeding above 0.085 in any window, short of the 0.1 threshold. A more lenient k/N=0.02 (also in the original grid) partially recovers detection (18.2% recall) but at the cost of a much higher false-alert rate on pure captures (see grid search). The window rule, as tuned, is heavily biased toward dense/pure attack sessions and does not transfer cleanly to a realistic low-rate interleaved attack -- this must be reported as a limitation, not hidden behind the pure-capture test numbers."
+}

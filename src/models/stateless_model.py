@@ -18,18 +18,26 @@ from src.features.stateless_engineered import build_engineered_features, ENGINEE
 
 OPERATING_FPR = 0.001
 SEED = 20260808
-MODEL_VERSION = "stateless_lgbm_v2"
 
 
-def train_stateless_model():
+def train_stateless_model(use_engineered: bool = True):
+    """use_engineered=False trains v1 (base 14 gated features only) -- the surviving
+    headline detector after sl2_session_repeat_count/ratio (v2) failed the mixed-session
+    stress test (see docs/PHASE2_PLAN.md item 8 and the rejected-approach section of the
+    report). use_engineered=True keeps producing the v2 artifacts, retained ONLY as
+    evidence for that rejected-approach writeup, never as a headline number again."""
+    model_version = "stateless_lgbm_v2" if use_engineered else "stateless_lgbm_v1"
+    suffix = "" if use_engineered else "_v1"
+
     schema = get_schema_lock()
     base_features = schema["stateless_features"]
-    features = base_features + ENGINEERED_FEATURES
+    features = base_features + ENGINEERED_FEATURES if use_engineered else list(base_features)
 
-    train = build_engineered_features(load_split("train"))
-    val_cal = build_engineered_features(load_split("val_cal"))
-    val_thr = build_engineered_features(load_split("val_thr"))
-    test = build_engineered_features(load_split("test"))
+    loader = build_engineered_features if use_engineered else (lambda df: df)
+    train = loader(load_split("train"))
+    val_cal = loader(load_split("val_cal"))
+    val_thr = loader(load_split("val_thr"))
+    test = loader(load_split("test"))
 
     # scale_pos_weight corrects for class imbalance: penalises missing an attack row
     # proportionally to how rare attacks are in the training set.
@@ -77,18 +85,19 @@ def train_stateless_model():
     test["calibrated_score"] = cal_test
     test["prediction"] = (raw_test >= threshold).astype(int)
 
-    report = build_report(test, threshold)
-    report["feature_set"] = {"base": base_features, "engineered": ENGINEERED_FEATURES,
+    report = build_report(test, threshold, model_version)
+    report["feature_set"] = {"base": base_features,
+                             "engineered": ENGINEERED_FEATURES if use_engineered else [],
                              "total": len(features)}
     report["scale_pos_weight"] = round(spw, 4)
 
-    _save_artifacts(model, calibrator, threshold, test, report, features)
+    _save_artifacts(model, calibrator, threshold, test, report, features, model_version, suffix)
     print(json.dumps({k: v for k, v in report.items() if k != "light_recall_bootstrap_ci"}, indent=2))
     print("light_recall_bootstrap_ci:", report["light_recall_bootstrap_ci"])
     return report
 
 
-def build_report(test: pd.DataFrame, threshold: float) -> dict:
+def build_report(test: pd.DataFrame, threshold: float, model_version: str = "stateless_lgbm_v1") -> dict:
     # Ranking metrics and the operating decision are evaluated on raw_score -- see the note in
     # train_stateless_model() on why the isotonic-calibrated score is too coarse (large tied
     # plateaus) to resolve an extreme operating point like FPR=0.1%.
@@ -125,7 +134,7 @@ def build_report(test: pd.DataFrame, threshold: float) -> dict:
     curve = recall_at_fpr_curve(y_true, scores, target_fprs=[0.01, 0.005, 0.002, 0.001])
 
     return {
-        "model_version": MODEL_VERSION,
+        "model_version": model_version,
         "operating_fpr_target": OPERATING_FPR,
         "headline_pr_auc": rm["pr_auc"],
         "supplementary_roc_auc": rm["roc_auc"],
@@ -145,27 +154,28 @@ def build_report(test: pd.DataFrame, threshold: float) -> dict:
 
 
 def _save_artifacts(model, calibrator, threshold: float, test: pd.DataFrame, report: dict,
-                    features: list):
+                    features: list, model_version: str, suffix: str = ""):
     models_dir = Path("models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": model, "calibrator": calibrator, "model_version": MODEL_VERSION,
+    joblib.dump({"model": model, "calibrator": calibrator, "model_version": model_version,
                  "features": features},
-                models_dir / "stateless_lgbm.pkl")
-    with open(models_dir / "stateless_threshold.json", "w") as f:
+                models_dir / f"stateless_lgbm{suffix}.pkl")
+    with open(models_dir / f"stateless_threshold{suffix}.json", "w") as f:
         json.dump({"threshold": threshold, "operating_fpr_target": OPERATING_FPR,
-                   "model_version": MODEL_VERSION}, f, indent=2)
+                   "model_version": model_version}, f, indent=2)
 
     pred_dir = Path("results/predictions")
     pred_dir.mkdir(parents=True, exist_ok=True)
     test[["session_id", "raw_score", "calibrated_score", "prediction"]].assign(
-        model_version=MODEL_VERSION
-    ).to_csv(pred_dir / "test_predictions_stateless.csv", index=False)
+        model_version=model_version
+    ).to_csv(pred_dir / f"test_predictions_stateless{suffix}.csv", index=False)
 
     metrics_dir = Path("results/metrics")
     metrics_dir.mkdir(parents=True, exist_ok=True)
-    with open(metrics_dir / "stateless_model_report.json", "w") as f:
+    with open(metrics_dir / f"stateless_model{suffix}_report.json", "w") as f:
         json.dump(report, f, indent=2)
 
 
 if __name__ == "__main__":
-    train_stateless_model()
+    import sys as _sys
+    train_stateless_model(use_engineered=("--v1" not in _sys.argv))

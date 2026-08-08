@@ -21,7 +21,10 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 
-def load_bundle(model_path: str = "models/stateless_lgbm.pkl"):
+def load_bundle(model_path: str = "models/stateless_lgbm_v1.pkl"):
+    """Defaults to v1 (base 14 features) -- the surviving headline detector after
+    the v2 session-repeat feature failed its mixed-session stress test (see
+    report/TECHNICAL_REPORT.md §9)."""
     bundle = joblib.load(model_path)
     return bundle["model"], bundle["features"]
 

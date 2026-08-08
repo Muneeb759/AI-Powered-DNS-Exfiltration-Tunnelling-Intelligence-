@@ -1,0 +1,177 @@
+{
+  "protocol": "leave-one-day-out (5 eligible days; 2020-11-25 excluded, zero benign rows)",
+  "operating_fpr_target": 0.001,
+  "feature_set": [
+    "sl_fqdn_count",
+    "sl_subdomain_length",
+    "sl_upper",
+    "sl_lower",
+    "sl_numeric",
+    "sl_entropy",
+    "sl_special",
+    "sl_labels",
+    "sl_labels_max",
+    "sl_labels_average",
+    "sl_len",
+    "sl_subdomain_flag",
+    "sl_longest_word_len",
+    "sl_numeric_ratio",
+    "sl2_subdomain_entropy",
+    "sl2_alpha_ratio",
+    "sl2_special_ratio",
+    "sl2_label_depth_entropy",
+    "sl2_numeric_subdomain_density",
+    "sl2_max_label_fraction",
+    "sl2_session_repeat_count",
+    "sl2_session_repeat_ratio"
+  ],
+  "session_repeat_feature_note": "sl2_session_repeat_count/ratio are recomputed independently within each fold's train/held split (see src/features/stateless_engineered.py). High held-out PR-AUC here, on a day whose sessions never appear in that fold's training data, is the leakage check confirming the repeat-count signal generalizes to sessions the model has never seen -- not a session-identity fingerprint memorized during training.",
+  "folds": [
+    {
+      "held_out_day": "2020-11-20",
+      "held_out_rows": 142138,
+      "held_out_benign_rows": 142138,
+      "held_out_positive_rows": 0,
+      "held_out_attack_categories_present": [
+        "benign"
+      ],
+      "threshold_source": "in-sample on training fold (see module docstring)",
+      "threshold": 0.014405381296255128,
+      "point_metrics_on_held_out_day": {
+        "threshold": 0.014405381296255128,
+        "tp": 0,
+        "fp": 9534,
+        "tn": 132604,
+        "fn": 0,
+        "fpr": 0.06707565886673514,
+        "tpr": 0.0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.9329243411332648,
+        "false_alerts_per_10k_benign": 670.7565886673514
+      },
+      "pr_auc_on_held_out_day": null,
+      "pr_auc_note": "undefined -- held-out day has only one class present"
+    },
+    {
+      "held_out_day": "2020-11-21",
+      "held_out_rows": 167720,
+      "held_out_benign_rows": 139026,
+      "held_out_positive_rows": 28694,
+      "held_out_attack_categories_present": [
+        "benign",
+        "light"
+      ],
+      "threshold_source": "in-sample on training fold (see module docstring)",
+      "threshold": 0.01926463393068089,
+      "point_metrics_on_held_out_day": {
+        "threshold": 0.01926463393068089,
+        "tp": 28694,
+        "fp": 658,
+        "tn": 138368,
+        "fn": 0,
+        "fpr": 0.004732927653820149,
+        "tpr": 1.0,
+        "recall": 1.0,
+        "precision": 0.9775824475333879,
+        "f1": 0.988664162905282,
+        "accuracy": 0.9960767946577629,
+        "false_alerts_per_10k_benign": 47.32927653820148
+      },
+      "pr_auc_on_held_out_day": 0.9996461102915989
+    },
+    {
+      "held_out_day": "2020-11-22",
+      "held_out_rows": 131098,
+      "held_out_benign_rows": 61567,
+      "held_out_positive_rows": 69531,
+      "held_out_attack_categories_present": [
+        "benign",
+        "heavy",
+        "light"
+      ],
+      "threshold_source": "in-sample on training fold (see module docstring)",
+      "threshold": 0.010955646469245774,
+      "point_metrics_on_held_out_day": {
+        "threshold": 0.010955646469245774,
+        "tp": 69530,
+        "fp": 106,
+        "tn": 61461,
+        "fn": 1,
+        "fpr": 0.0017217015609011321,
+        "tpr": 0.9999856179258173,
+        "recall": 0.9999856179258173,
+        "precision": 0.9984777988396806,
+        "f1": 0.9992311395661329,
+        "accuracy": 0.9991838166867534,
+        "false_alerts_per_10k_benign": 17.217015609011323
+      },
+      "pr_auc_on_held_out_day": 0.9999964069489361
+    },
+    {
+      "held_out_day": "2020-11-23",
+      "held_out_rows": 99060,
+      "held_out_benign_rows": 49115,
+      "held_out_positive_rows": 49945,
+      "held_out_attack_categories_present": [
+        "benign",
+        "heavy"
+      ],
+      "threshold_source": "in-sample on training fold (see module docstring)",
+      "threshold": 0.014127939948779577,
+      "point_metrics_on_held_out_day": {
+        "threshold": 0.014127939948779577,
+        "tp": 49945,
+        "fp": 753,
+        "tn": 48362,
+        "fn": 0,
+        "fpr": 0.015331365163392039,
+        "tpr": 1.0,
+        "recall": 1.0,
+        "precision": 0.9851473430904573,
+        "f1": 0.9925181085619467,
+        "accuracy": 0.9923985463355542,
+        "false_alerts_per_10k_benign": 153.3136516339204
+      },
+      "pr_auc_on_held_out_day": 0.9999922259890724
+    },
+    {
+      "held_out_day": "2020-11-24",
+      "held_out_rows": 186794,
+      "held_out_benign_rows": 71012,
+      "held_out_positive_rows": 115782,
+      "held_out_attack_categories_present": [
+        "benign",
+        "heavy"
+      ],
+      "threshold_source": "in-sample on training fold (see module docstring)",
+      "threshold": 0.001304956683624744,
+      "point_metrics_on_held_out_day": {
+        "threshold": 0.001304956683624744,
+        "tp": 109764,
+        "fp": 412,
+        "tn": 70600,
+        "fn": 6018,
+        "fpr": 0.005801836309356165,
+        "tpr": 0.948023008757838,
+        "recall": 0.948023008757838,
+        "precision": 0.9962605286087715,
+        "f1": 0.9715433841687393,
+        "accuracy": 0.9655770527961284,
+        "false_alerts_per_10k_benign": 58.01836309356165
+      },
+      "pr_auc_on_held_out_day": 0.9974139296372334
+    }
+  ],
+  "fold_to_fold_variation": {
+    "pr_auc_folds_used": 4,
+    "pr_auc_mean": 0.9992621682167102,
+    "pr_auc_std": 0.0010765091999634096,
+    "pr_auc_min": 0.9974139296372334,
+    "pr_auc_max": 0.9999964069489361,
+    "recall_folds_used": 4,
+    "recall_mean": 0.9870021566709138,
+    "recall_std": 0.02250462230632835
+  }
+}

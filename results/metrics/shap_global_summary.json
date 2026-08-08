@@ -2,92 +2,60 @@
   "sample_size": 5000,
   "ranked_features": [
     {
-      "feature": "sl2_session_repeat_ratio",
-      "mean_abs_shap": 8.91591177338056
+      "feature": "sl_longest_word_len",
+      "mean_abs_shap": 2.3185092271818863
     },
     {
       "feature": "sl_fqdn_count",
-      "mean_abs_shap": 1.626570305584707
-    },
-    {
-      "feature": "sl2_session_repeat_count",
-      "mean_abs_shap": 1.22046286404952
-    },
-    {
-      "feature": "sl2_alpha_ratio",
-      "mean_abs_shap": 0.6094761708226846
-    },
-    {
-      "feature": "sl2_subdomain_entropy",
-      "mean_abs_shap": 0.38885906908041934
-    },
-    {
-      "feature": "sl2_special_ratio",
-      "mean_abs_shap": 0.3416935049740828
-    },
-    {
-      "feature": "sl_subdomain_length",
-      "mean_abs_shap": 0.3225247989419492
-    },
-    {
-      "feature": "sl2_label_depth_entropy",
-      "mean_abs_shap": 0.2236233541789008
-    },
-    {
-      "feature": "sl_labels_average",
-      "mean_abs_shap": 0.10487433678241896
-    },
-    {
-      "feature": "sl2_max_label_fraction",
-      "mean_abs_shap": 0.10233523703626576
-    },
-    {
-      "feature": "sl_entropy",
-      "mean_abs_shap": 0.0847821026668376
-    },
-    {
-      "feature": "sl_longest_word_len",
-      "mean_abs_shap": 0.029101105312221928
-    },
-    {
-      "feature": "sl_special",
-      "mean_abs_shap": 0.02448223528451498
-    },
-    {
-      "feature": "sl_labels_max",
-      "mean_abs_shap": 0.021368461606140282
+      "mean_abs_shap": 1.2330041959851785
     },
     {
       "feature": "sl_lower",
-      "mean_abs_shap": 0.02095906501788997
+      "mean_abs_shap": 1.0533957431196301
+    },
+    {
+      "feature": "sl_subdomain_length",
+      "mean_abs_shap": 0.7658977406997401
     },
     {
       "feature": "sl_len",
-      "mean_abs_shap": 0.008030460917786053
+      "mean_abs_shap": 0.3818175128023557
     },
     {
-      "feature": "sl2_numeric_subdomain_density",
-      "mean_abs_shap": 0.007695902338655015
+      "feature": "sl_entropy",
+      "mean_abs_shap": 0.3016678799908242
     },
     {
-      "feature": "sl_labels",
-      "mean_abs_shap": 0.0061673551838327635
-    },
-    {
-      "feature": "sl_numeric",
-      "mean_abs_shap": 0.0037506534044826987
-    },
-    {
-      "feature": "sl_numeric_ratio",
-      "mean_abs_shap": 0.0009564097738563342
-    },
-    {
-      "feature": "sl_upper",
-      "mean_abs_shap": 0.00023131927551429333
+      "feature": "sl_labels_max",
+      "mean_abs_shap": 0.17239442716065007
     },
     {
       "feature": "sl_subdomain_flag",
-      "mean_abs_shap": 0.0
+      "mean_abs_shap": 0.09316500929552281
+    },
+    {
+      "feature": "sl_special",
+      "mean_abs_shap": 0.0659333330949908
+    },
+    {
+      "feature": "sl_labels_average",
+      "mean_abs_shap": 0.054539160946100784
+    },
+    {
+      "feature": "sl_upper",
+      "mean_abs_shap": 0.050644082301989385
+    },
+    {
+      "feature": "sl_numeric_ratio",
+      "mean_abs_shap": 0.04068857069365641
+    },
+    {
+      "feature": "sl_numeric",
+      "mean_abs_shap": 0.0395379337859738
+    },
+    {
+      "feature": "sl_labels",
+      "mean_abs_shap": 0.018441712334217146
     }
   ]
 }

@@ -1,0 +1,118 @@
+{
+  "model_version": "stateless_lgbm_v1",
+  "operating_fpr_target": 0.001,
+  "headline_pr_auc": 0.6269104887077445,
+  "supplementary_roc_auc": 0.8097207725781099,
+  "threshold": 0.7262068048695854,
+  "combined": {
+    "threshold": 0.7262068048695854,
+    "tp": 90,
+    "fp": 50,
+    "tn": 61517,
+    "fn": 39184,
+    "fpr": 0.0008121233777835529,
+    "tpr": 0.00229159240209808,
+    "recall": 0.00229159240209808,
+    "precision": 0.6428571428571429,
+    "f1": 0.004566905160602831,
+    "accuracy": 0.6109320613639293,
+    "false_alerts_per_10k_benign": 8.12123377783553
+  },
+  "light": {
+    "pr_auc": 0.1282987937796968,
+    "roc_auc_supplementary": 0.808309549292161,
+    "threshold": 0.7262068048695854,
+    "tp": 8,
+    "fp": 50,
+    "tn": 61517,
+    "fn": 3471,
+    "fpr": 0.0008121233777835529,
+    "tpr": 0.0022995113538373095,
+    "recall": 0.0022995113538373095,
+    "precision": 0.13793103448275862,
+    "f1": 0.004523607577042692,
+    "accuracy": 0.9458690772683946,
+    "false_alerts_per_10k_benign": 8.12123377783553
+  },
+  "heavy": {
+    "pr_auc": 0.6052362334341385,
+    "roc_auc_supplementary": 0.8098579326790127,
+    "threshold": 0.7262068048695854,
+    "tp": 82,
+    "fp": 50,
+    "tn": 61517,
+    "fn": 35713,
+    "fpr": 0.0008121233777835529,
+    "tpr": 0.00229082274060623,
+    "recall": 0.00229082274060623,
+    "precision": 0.6212121212121212,
+    "f1": 0.004564811979848026,
+    "accuracy": 0.6326801010661244,
+    "false_alerts_per_10k_benign": 8.12123377783553
+  },
+  "light_recall_bootstrap_ci": {
+    "mean": 0.0022995113538373095,
+    "ci_lower": 0.0022995113538373095,
+    "ci_upper": 0.0022995113538373095
+  },
+  "light_recall_bootstrap_ci_note": "Zero-width CI is structural, not a precise estimate: all test-set light-attack positives (3,479 rows) belong to a single capture trace, so session-grouped bootstrap resampling has only one cluster to draw from. See summary.md's own flag on this and its recommended leave-one-day-out backstop (docs/PHASE2_PLAN.md item 1).",
+  "recall_vs_fpr_curve": [
+    {
+      "target_fpr": 0.01,
+      "target_fpr_pct": "1.00%",
+      "threshold": 0.7181241315278297,
+      "actual_fpr": 0.009648025728068608,
+      "recall": 0.0254112135254876,
+      "precision": 0.6268844221105527,
+      "false_alerts_per_10k_benign": 96.48025728068608
+    },
+    {
+      "target_fpr": 0.005,
+      "target_fpr_pct": "0.50%",
+      "threshold": 0.7254825117318727,
+      "actual_fpr": 0.0008283658453392239,
+      "recall": 0.00229159240209808,
+      "precision": 0.6382978723404256,
+      "false_alerts_per_10k_benign": 8.28365845339224
+    },
+    {
+      "target_fpr": 0.002,
+      "target_fpr_pct": "0.20%",
+      "threshold": 0.7254825117318727,
+      "actual_fpr": 0.0008283658453392239,
+      "recall": 0.00229159240209808,
+      "precision": 0.6382978723404256,
+      "false_alerts_per_10k_benign": 8.28365845339224
+    },
+    {
+      "target_fpr": 0.001,
+      "target_fpr_pct": "0.10%",
+      "threshold": 0.7254825117318727,
+      "actual_fpr": 0.0008283658453392239,
+      "recall": 0.00229159240209808,
+      "precision": 0.6382978723404256,
+      "false_alerts_per_10k_benign": 8.28365845339224
+    }
+  ],
+  "feature_set": {
+    "base": [
+      "sl_fqdn_count",
+      "sl_subdomain_length",
+      "sl_upper",
+      "sl_lower",
+      "sl_numeric",
+      "sl_entropy",
+      "sl_special",
+      "sl_labels",
+      "sl_labels_max",
+      "sl_labels_average",
+      "sl_len",
+      "sl_subdomain_flag",
+      "sl_longest_word_len",
+      "sl_numeric_ratio"
+    ],
+    "engineered": [],
+    "total": 14
+  },
+  "scale_pos_weight": 2.255
+}

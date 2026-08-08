@@ -1,27 +1,43 @@
 # Technical Report — AI-Powered DNS Exfiltration & Tunnelling Intelligence
 
-> **Status: DRAFT.** Every section below is populated with real, regenerated numbers from this
-> repo's own `results/metrics/*.json` — nothing here is a placeholder figure. SHAP explanations
-> and the Streamlit analyst case view (§14) are implemented and verified running end-to-end. What's
-> still missing is marked `TODO` explicitly: the full failure table, Stage 2 latency, the live demo
-> rehearsal, and the two packaged deliverable docs. Team: Muneeb (data, splits, leakage audit,
-> latency harness, reproducibility) + Serena (baselines, modelling, calibration, cascade,
-> evaluation, SHAP, Streamlit UI, this report).
+> **Status: DRAFT, post-revert.** This report was rewritten after an internal adversarial review
+> and a synthetic mixed-session stress test found that the previous
+> headline result (PR-AUC 0.9999) was a dataset-structure artifact, not a real detector. That
+> finding, and two related ones discovered while chasing it down, are now the strongest section of
+> this report (§9). The headline model is v1 (14 base gated features, PR-AUC 0.627). Nothing here
+> is a placeholder figure — every number traces to a file in `results/metrics/`. Team: Muneeb
+> (data, splits, leakage audit, latency harness, reproducibility) + Serena (baselines, modelling,
+> calibration, cascade, window aggregation, evaluation, SHAP, Streamlit UI, this report).
 
 ---
 
-## 1. Problem and target user
+## 1. Problem, target user, and declared track
 
 Network defenders and administrators of small or resource-constrained networks need to detect
 DNS-based data exfiltration and tunnelling without the compute budget for a heavyweight,
-always-on stateful analysis pipeline. This project targets exactly that user: a defender who
-wants a cheap, always-on first-pass detector, with an expensive deeper look reserved only for
-traffic that already looks elevated — and an honest accounting of what that trade-off costs in
-missed attacks versus what it saves in compute.
+always-on stateful analysis pipeline, and need enough evidence to make the final call themselves
+rather than trust an opaque score.
 
-We chose **Track 2 — Lightweight & Tiered Detection**, with the row-level stateless model as the
-always-on Track 1 detector underneath it (see §9 for why the decision unit is row-level, not
-session-level, and why that was a data-driven pivot from the original plan, not a shortcut).
+**Declared primary track: Track 1 — Detection & Alert Prioritization.** Track 1's five strong-
+submission criteria are met directly: a stated decision unit (row-level, with a window-level
+aggregation reported as a secondary experiment, §8), calibrated confidence with an explicit
+operating threshold (§6), separate light/heavy analysis at every reported number, alert ranking
+via the continuous score, and reason codes tied to observed features (SHAP, §12).
+
+**Track 2 (Lightweight & Tiered Detection) is retained as supporting work, reframed.** Track 2's
+central claim is that measured compute savings justify a recall trade-off. Our own measurement
+does not support that claim: Stage 2 costs ~165 μs per escalating session plus a one-time offline
+context build, both negligible next to Stage 1's per-query cost. There is no meaningful cost to
+trade against recall, so the cascade (§10) is presented as an **interpretable confirmation layer**
+that turns a weak row-level signal into a session-level verdict with a transparent rationale — not
+as a cost optimization. We are not claiming Track 2 as primary because our own numbers do not
+support its central premise.
+
+**Track 3 (Analyst Investigation & Explanation) is retained as supporting work**, unchanged in
+scope: the Streamlit case view (§13) that surfaces the evidence this report already produces.
+
+We are declaring one primary track, per the brief's requirement, and are explicit that the other
+two are supporting components of that one submission, not parallel claims for separate credit.
 
 ## 2. System architecture
 
@@ -30,9 +46,9 @@ DNS query row
       |
       v
 +----------------------------+
-| Stage 1: stateless LightGBM|  <- always runs, cheap (14 gated features)
+| Stage 1: stateless LightGBM|  <- always runs, cheap (14 gated base features, v1)
 | calibrated (isotonic,      |
-| val_cal-only)              |
+| val_cal-only)               |
 +----------------------------+
       |
       | raw_score >= 0.4 ("suspicious" band, per the original
@@ -43,20 +59,25 @@ DNS query row
       | r_sus > delta (0.5, tuned on val_thr)?
       v
 +----------------------------+
-| Stage 2: pooled stateful   |  <- only for escalated sessions (38.9% of test rows)
-| context, majority vote     |
+| Stage 2: pooled stateful   |  <- only for escalated sessions (2 of 3 test sessions)
+| context, majority vote     |  <- interpretable CONFIRMATION layer, not a cost optimization (§1)
 | over top-3 discriminative  |
 | features (train-set only)  |
 +----------------------------+
       |
       v
 confirmed -> alert whole session   |   unconfirmed -> human review   |   context unavailable -> Stage 1 verdict stands
+
+Separately reported (secondary experiment, not part of the alerting pipeline above):
+row-level Stage 1 scores can be pooled into fixed-size windows per capture (§8) --
+raises apparent recall on dense attack captures, fails on diluted/interleaved attack
+traffic. Not adopted as the alerting unit; reported for what it teaches (§9).
 ```
 
-Rule baseline, Stage 1, and Stage 2 all sit on top of the same Phase 1 data contract
-(`data/splits/{train,val_cal,val_thr,test}.parquet`), built and independently re-verified end to
-end (`scripts/handoff_check.py`, `pytest` 6/6 green) against the real CIC-Bell-DNS-EXF-2021
-dataset.
+Rule baseline, Stage 1, Stage 2, and the window-aggregation experiment all sit on top of the same
+Phase 1 data contract (`data/splits/{train,val_cal,val_thr,test}.parquet`), built and independently
+re-verified end to end (`scripts/handoff_check.py`, `pytest` 6/6 green) against the real
+CIC-Bell-DNS-EXF-2021 dataset.
 
 ## 3. Data used
 
@@ -66,18 +87,18 @@ dataset.
   there is no separate frozen organizer snapshot beyond the official dataset link in the brief's
   resources section — this is the dataset of record for judging, not a stand-in.
 - **Scale:** 757,211 stateless rows / 262,105 stateful rows across 18 capture files, reconciled
-  exactly against the official UNB Table 2 category statistics (once the shared day-20/21 benign
-  pool that the official table double-counts across Heavy-Benign and Light-Benign is accounted
-  for — verified row-count arithmetic, not assumed).
+  exactly against the official UNB Table 2 category statistics.
 - **No row-level or sub-file join exists** between the stateless and stateful tables (verified
-  directly: the same capture has 35,795 stateless rows vs 10,735 stateful rows with zero shared
-  column names, and stateless row order is not consistently chronological across files — see §9).
+  directly: zero shared column names, and stateless row order is not consistently chronological
+  across files — see §10).
+- **Every one of the 18 capture files is single-composition** — 100% benign or 100% attack rows,
+  verified programmatically, none mixed. This single fact drives §9, the most important finding in
+  this report.
 
 ## 4. Split protocol
 
 `capture_file_grouped_split` (`src/data/splits.py`), not the originally planned leave-one-day-out
-day-grouped split — day-grouping left validation partitions with zero light-attack rows (data
-reality, not a preference; see `docs/PHASE1_AUDIT.md` M1).
+day-grouped split — day-grouping left validation partitions with zero light-attack rows.
 
 | Partition | Rows | Benign | Positive | Light | Heavy | Min FPR floor |
 |---|---|---|---|---|---|---|
@@ -87,20 +108,15 @@ reality, not a preference; see `docs/PHASE1_AUDIT.md` M1).
 | test | 100,841 | 61,567 | 39,274 | 3,479 | 35,795 | 1.62e-5 |
 
 **Guarantees actually enforced:** `session_id` (capture-file) disjointness, dual-category
-composition (every partition has benign+light+heavy), `unit_id` uniqueness — all verified by
-`assert_split_protocol()` and covered by `tests/test_splits_real.py`.
+composition (every partition has benign+light+heavy), `unit_id` uniqueness.
 
-**Guarantee this split does *not* make:** `collection_day` is not disjoint across partitions
-(e.g. `2020-11-21` appears in train, val_cal, and val_thr). This is measured and reported
-explicitly (`results/metrics/split_summary.json:day_overlap`), not glossed over — a day-disjoint
-split was tried first and abandoned for the reason above. Since `collection_day`/`timestamp` are
-excluded features, this does not open a leakage path; it does mean day can't be used as an
-independent robustness axis for *this* split, which is exactly why §8's leave-one-day-out check is
-a separate evaluation loop, not folded into the dev split.
+**Guarantee this split does *not* make:** `collection_day` is not disjoint across partitions.
+Measured and reported explicitly (`results/metrics/split_summary.json:day_overlap`). Since
+`collection_day`/`timestamp` are excluded features, this does not open a leakage path; it is why
+§7's leave-one-day-out check is a separate evaluation loop, not folded into the dev split.
 
-Day `2020-11-25` is excluded entirely (0 benign rows, single-class slice, FPR/PR-AUC undefined) —
-this drops 30,401 heavy-attack rows from all partitions, a deliberate and documented trade-off,
-not silent data loss.
+Day `2020-11-25` is excluded entirely (0 benign rows, single-class slice) — drops 30,401
+heavy-attack rows from all partitions, a documented trade-off, not silent data loss.
 
 ## 5. Excluded leakage fields
 
@@ -110,323 +126,436 @@ Allowlist-based gate (`configs/leakage_exclusions.yaml`, enforced by `LeakageGat
 | Field | Reason |
 |---|---|
 | `timestamp` | Leaks collection day / execution timing |
-| `sld` | Raw domain/IP-octet/NetBIOS identity shortcut (59% of positive rows and 38% of benign rows contain IP fragments or NetBIOS junk strings, not real domains — verified in `docs/PHASE1_AUDIT.md` B3) |
+| `sld` | Raw domain/IP-octet/NetBIOS identity shortcut (verified in `docs/PHASE1_AUDIT.md` B3) |
 | `longest_word`, `subdomain` | Raw string tokens carrying query-identity text |
 | `capture_file`, `session_id`, `collection_day`, `unit_id` | Grouping/identifier keys, not features |
-| `distinct_ip`, `reverse_dns`, `distinct_domains`, `unique_asn`, `unique_country`, `unique_ttl`, `rr_type` | Stateful-table raw identity/list fields — replaced by safe derived counts/flags/one-hot in `src/features/stateful_context.py` |
-| 8 constant stateful columns (`NS_frequency`, `CNAME_frequency`, ...) | `nunique == 1` across the entire dataset — verified, not assumed |
+| `distinct_ip`, `reverse_dns`, `distinct_domains`, `unique_asn`, `unique_country`, `unique_ttl`, `rr_type` | Stateful-table raw identity/list fields |
+| 8 constant stateful columns | `nunique == 1` across the entire dataset |
+
+**Note on §9's finding:** `session_id` was excluded here as a raw feature value from the start.
+§9 documents a *different, subtler* violation of this same principle — an aggregate *statistic*
+computed by grouping on `session_id` (never the raw value itself) that still functioned as a
+label proxy, because the brief's own listed shortcut ("session identity... may reveal the label")
+applies to derived statistics, not just raw values. That distinction is exactly what the original
+exclusion rule didn't anticipate, and exactly what broke.
 
 **Sanity check (shortcut ablation, mandatory per brief):** a model trained with the excluded
-identity shortcuts included (`sc_sld`, `sc_longest_word`, `sc_day`, `sc_session`) reaches
-**PR-AUC 0.6946** vs the gated model's **0.6349** — a real but modest +0.0597 inflation, not a
-catastrophic one, meaning the exclusions are doing real work without implying the raw dataset was
-trivially all-shortcut (`results/metrics/leakage_ablation.json`).
+identity shortcuts included reaches PR-AUC **0.6946** vs the gated model's **0.6349** — a real but
+modest inflation (`results/metrics/leakage_ablation.json`).
 
 ## 6. Baseline
 
-Mandatory non-ML rule baseline: `z(sl_len) + z(sl_entropy)`, normalization constants fit on
-`train` only, threshold picked on `val_thr` at FPR=0.1%.
+Mandatory non-ML rule baseline: signed `z(sl_len) + z(sl_entropy)`, normalization fit on `train`
+only, threshold picked on `val_thr` at FPR=0.1%.
 
-| | PR-AUC | ROC-AUC (supp.) | Recall @ FPR=0.1% | False alerts / 10k benign |
-|---|---|---|---|---|
-| Combined | 0.366 | 0.499 | 0.0% | 1.95 |
-| Light | 0.051 | 0.503 | 0.0% | 1.95 |
-| Heavy | 0.345 | 0.498 | 0.0% | 1.95 |
+**A bug was found and fixed here, not just tuned:** the original unsigned version summed
+`z(sl_len) + z(sl_entropy)` directly and scored at ROC-AUC 0.499 — exactly chance. Diagnosis:
+`sl_len` alone has real train-set signal (ROC-AUC 0.63, attack queries are longer), but
+`sl_entropy` alone points the *opposite* direction on this dataset (ROC-AUC 0.449 — attack entropy
+is slightly *lower* than benign here, contrary to the textbook "exfil payloads are high-entropy"
+assumption). Summing the two raw z-scores let the backwards entropy term cancel the real length
+signal. Fix: each feature's sign is now determined from train data only (whichever direction
+correlates with the attack class there) before summing — a standard baseline convention, not new
+modelling.
 
-Essentially no better than chance at this operating point — expected and honestly reported, not a
-bug. It exists to show the ML model's lift, not as a competitive detector.
+**Why the entropy sign is reversed here is itself a finding, not just a bug to patch.** The
+exfiltration tool in this testbed replays a small set of *structured* query shapes (§9: 39,274
+attack rows reduce to 47 unique feature vectors), which are individually low-entropy. Ordinary
+benign DNS, by contrast, is full of genuinely high-entropy subdomains — CDN hostnames, hashed
+cache keys, randomized service labels. So on this data, high entropy is weak evidence of *benign*
+traffic, not attack traffic. This corroborates §9's single-composition/limited-tooling finding from
+an entirely independent direction: the attack traffic here is narrower and more repetitive than
+real exfiltration would be, and that narrowness shows up even in a two-variable heuristic.
 
-## 7. Stateless model (Stage 1 / Track 1 headline)
+| | PR-AUC | ROC-AUC (supp.) | Recall @ FPR=0.1% | Precision | False alerts / 10k benign |
+|---|---|---|---|---|---|
+| Combined | 0.523 | 0.700 | 0.229% | 73.2% | 5.36 |
+| Light | 0.091 | 0.699 | 0.345% | 26.7% | 5.36 |
+| Heavy | 0.500 | 0.700 | 0.218% | 70.3% | 5.36 |
 
-LightGBM (`model_version: stateless_lgbm_v2`) on the 14 gated stateless features plus 8 engineered
-features (`src/features/stateless_engineered.py`), `scale_pos_weight` class balancing, isotonic
-calibration fit on `val_cal` only, operating threshold selected on `val_thr` at FPR=0.1% target.
+### 6b. Honest comparison: what the ML model actually buys over the rule
 
-**Engineered features (v2):** six interaction/ratio terms over the base `sl_*` columns
-(`sl2_subdomain_entropy`, `sl2_alpha_ratio`, `sl2_special_ratio`, `sl2_label_depth_entropy`,
-`sl2_numeric_subdomain_density`, `sl2_max_label_fraction`), plus two features that turned out to
-carry almost all of the lift: `sl2_session_repeat_count` / `sl2_session_repeat_ratio` — how many
-times a row's exact base feature vector recurs within its own session, computed via a `groupby`
-on `session_id` (used only as a grouping key, never as a feature value, matching the pattern
-already used for `sf_*` pooling in `src/features/stateful_context.py`).
+The brief requires showing *"measurable value beyond a conventional rule or threshold."* Placed
+side by side at the tight operating point:
 
-**Why this feature exists:** a diagnostic pass found that the 39,274 attack rows in `test` reduce
-to only 47 unique base feature combinations (0.1%) — the exfiltration tooling in this dataset
-replays a small set of query shapes at high volume, while benign traffic rarely repeats a shape
-at all (`sl2_session_repeat_count` train-set means: benign ≈1,882, attack ≈6,866). No individual
-row-level feature in the v1 set exposed this; `sl2_session_repeat_count` does.
-
-| | PR-AUC | Recall @ FPR=0.1% | Precision | False alerts / 10k benign |
-|---|---|---|---|---|
-| Combined | **0.99999** | 97.21% | 100% | 0.0 |
-| Light | 0.99986 | 97.41% | 100% | 0.0 |
-| Heavy | 0.99999 | 97.19% | 100% | 0.0 |
-
-(v1, base 14 features only, for comparison: PR-AUC 0.6268, recall 0.229% at the same FPR target.)
-
-**Recall vs. FPR curve** (v2 model, looser operating points):
-
-| Target FPR | Achieved FPR | Recall | Precision |
+| | PR-AUC | Recall @ tight point | Precision |
 |---|---|---|---|
-| 1% | 0.70% | 99.99% | 98.91% |
-| 0.5% | 0.50% | 99.99% | 99.23% |
-| 0.2% | 0.16% | 99.98% | 99.75% |
-| 0.1% | 0.075% | 99.91% | 99.88% |
+| Rule baseline | 0.523 | 0.229% | **73.2%** |
+| v1 ML model | **0.627** | 0.229% | 64.3% |
 
-Recall is already effectively saturated at every tested FPR target — the trade-off curve that was
-steep in v1 is now flat, because the repeat-count signal separates the classes almost completely.
+**At the tight operating point the rule baseline has higher precision than the model at identical
+recall.** The model's advantage is concentrated in *ranking quality* (PR-AUC 0.523 → 0.627
+combined; 0.091 → 0.128 on light attacks), not at that operating point. We report this rather than
+selecting a comparison that flatters the model.
 
-### How we ruled out leakage before trusting this number
+The model's practical advantages over the fixed rule are: (a) a continuous, calibrated score that
+supports alert *ranking* and triage prioritization, where the rule provides a single hard cut;
+(b) reason codes per alert (§12) tied to 14 features rather than 2; and (c) a usable operating-point
+curve (§7) that lets a defender trade FPR for recall — including the 47% recall point the rule
+cannot reach at any threshold. Those are real, but they are workflow advantages, not a large
+detection-quality gap, and we are not claiming otherwise.
 
-A jump from PR-AUC 0.63 to 0.9999 is the kind of result that should be treated as suspicious by
-default, not celebrated. `session_id` is a grouping key, and this dataset's capture files are
-single-composition (§10) — grouping by session and getting a near-perfect signal is *exactly*
-the shape a session-identity leak would take. Before accepting the number, we ran the specific
-check that would falsify it: **leave-one-day-out (§8) with the repeat-count features recomputed
-independently inside each fold**, so a held-out day's sessions contribute zero repeat-statistics
-to that fold's training data. If the v1→v2 jump were session fingerprinting, held-out-day PR-AUC
-would collapse back toward v1's baseline on sessions the model never saw. It doesn't: LOTO PR-AUC
-is 0.997–1.000 across all 4 testable days (mean 0.9993, std 0.0011; see §8). That is the evidence
-the lift is a generalizable behavioral pattern (attack sessions replay identical query shapes;
-benign sessions don't), not a memorized session identity.
+## 7. Stateless model (Stage 1 headline, v1)
+
+LightGBM (`model_version: stateless_lgbm_v1`) on the 14 gated stateless features only,
+`scale_pos_weight` class balancing, isotonic calibration fit on `val_cal` only (too coarse for
+FPR=0.1% resolution — the raw score is used for the operating decision; see code comment in
+`src/models/stateless_model.py`), operating threshold selected on `val_thr`.
+
+**Achievable operating points** (`src/eval/operating_points.py`,
+`results/metrics/operating_points_v1.json`). Thresholds are enumerated from every *distinct*
+benign score on `val_thr` and evaluated on `test`, rather than from a fixed grid of target FPRs:
+
+| Threshold | val_thr FPR | test FPR | Recall (comb.) | Recall (light) | Recall (heavy) | Precision | Alerts/10k benign |
+|---|---|---|---|---|---|---|---|
+| 0.7354 | 0.07% | 0.08% | 0.23% | 0.23% | 0.23% | 65.9% | 7.5 |
+| 0.7181 | 1.04% | 0.97% | 2.54% | 2.53% | 2.54% | 62.7% | 96.5 |
+| 0.7143 | 4.22% | 3.94% | 10.35% | 10.23% | 10.36% | 62.7% | 393.7 |
+| **0.7136** | **4.40%** | **4.12%** | **10.78%** | **10.64%** | **10.80%** | **62.6%** | **411.7** |
+| 0.7124 | 19.42% | 17.95% | 47.06% | 46.22% | 47.14% | 62.6% | 1,794.8 |
+| 0.70909 | 21.93% | 20.26% | 53.21% | 52.60% | 53.27% | 62.6% | 2,025.8 |
+| 0.70906 | 30.26% | 27.93% | 73.49% | 73.30% | 73.51% | 62.7% | 2,792.6 |
+
+**Why earlier versions of this table had duplicate rows — a real property, not a coarse grid.**
+This model's benign score distribution is heavily quantized: 71,012 `val_thr` benign rows produce
+only **4,289 distinct scores**, with very large ties. Entire FPR bands are therefore unreachable at
+*any* threshold. The two largest gaps (`operating_points_v1.json:unreachable_fpr_bands`):
+
+- **1.04% → 4.22%** FPR: nothing in between (3.2-point gap).
+- **4.40% → 19.42%** FPR: nothing in between (15.0-point gap) — 10,662 benign rows share the single
+  score 0.712416, so crossing it jumps FPR by 15 points at once.
+
+There is no "10% FPR" operating point for this model. Reporting a table of fixed target FPRs would
+imply otherwise; this table does not.
+
+**Chosen headline operating point: threshold 0.7136 — 4.12% test FPR, 10.78% recall, 62.6%
+precision.** It is the most recall available below the 15-point cliff. **We also report the
+post-cliff point (17.95% FPR → 47.06% recall) rather than hiding it**: a defender willing to accept
+~1,795 false alerts per 10,000 benign queries gets 4.4x the recall. That is a real operational
+choice, and which side of the cliff is correct depends on analyst capacity, not on which number
+looks better in a report.
+
+| | PR-AUC | Recall @ 4.12% FPR | Precision | False alerts / 10k benign |
+|---|---|---|---|---|
+| Combined | **0.6269** | 10.78% | 62.6% | 411.7 |
+| Light | 0.1283 | 10.64% | — | 411.7 |
+| Heavy | 0.6052 | 10.80% | — | 411.7 |
+
+Light and heavy recall track each other closely but are not identical (10.64% vs 10.80% here;
+46.22% vs 47.14% post-cliff) — heavy is consistently marginally higher at every operating point,
+as expected, and the two are close because both categories' rows sit in the same quantized score
+bands.
+
+**Calibration** (Track 1 criterion: *"calibrated confidence and an explicit operating threshold"*).
+Isotonic regression fit on `val_cal` only. Brier score on `test`: **raw 0.14976 → isotonic
+0.14855** (a real but small improvement — the raw LightGBM score is already reasonably calibrated
+here). Full 10-bin reliability tables for both are in
+`results/metrics/operating_points_v1.json:calibration`. **Calibrated probabilities are what the
+analyst UI displays and what alert ranking uses; the raw score drives the operating threshold**,
+because isotonic's step-function output collapses benign scores into a handful of plateaus far too
+coarse to resolve a tight FPR budget. Both are reported so the trade-off is visible rather than
+asserted.
 
 **Light-attack recall bootstrap CI:** zero-width by construction, not by precision — all 3,479
 test-set light-attack rows sit in a single capture trace, so session-grouped bootstrap resampling
-only has one cluster to draw from (`stateless_model_report.json:light_recall_bootstrap_ci_note`).
-This is exactly why §8's independent day-based check carries the real weight of the claim.
+only has one cluster to draw from. This is exactly why §7's leave-one-day-out check (below) and
+§9's statistical-power argument matter more than a single test-set number.
 
-## 8. Leave-one-day-out robustness (mandatory per brief, separate from the dev split)
+## 7b. Leave-one-day-out robustness (mandatory per brief, separate from the dev split)
 
-`src/eval/loto.py`: fresh model per held-out day (v2 feature set — base + engineered, with
-`sl2_session_repeat_count/ratio` recomputed independently inside each fold, see §7), threshold
-picked in-sample per fold (documented small-N simplification — only 18 sessions total, not enough
-left per fold for a clean nested split).
+`src/eval/loto.py`, v1 (base 14 features): fresh model per held-out day, threshold picked
+in-sample per fold (documented small-N simplification — only 18 sessions total).
 
 | Held-out day | Rows | Positive rows | Categories present | PR-AUC | Recall @ in-sample threshold |
 |---|---|---|---|---|---|
 | 2020-11-20 | 142,138 | 0 | benign only | n/a (single class) | n/a |
-| 2020-11-21 | 167,720 | 28,694 | benign, **light** | **0.9996** | 100% |
-| 2020-11-22 | 131,098 | 69,531 | benign, light, heavy | 1.0000 | 100% |
-| 2020-11-23 | 99,060 | 49,945 | benign, heavy | 1.0000 | 100% |
-| 2020-11-24 | 186,794 | 115,782 | benign, heavy | 0.9974 | 94.80% |
+| 2020-11-21 | 167,720 | 28,694 | benign, **light** | **0.345** | 0.26% |
+| 2020-11-22 | 131,098 | 69,531 | benign, light, heavy | 0.748 | 0.21% |
+| 2020-11-23 | 99,060 | 49,945 | benign, heavy | 0.715 | 0.32% |
+| 2020-11-24 | 186,794 | 115,782 | benign, heavy | 0.800 | 0.25% |
 
-Fold-to-fold PR-AUC: mean 0.9993, std 0.0011, range 0.9974–1.0000 (4 folds with both classes).
+Fold-to-fold PR-AUC: mean 0.652, std 0.180, range 0.345–0.800. **The light-attack-only day is the
+weakest fold by a wide margin** — concrete, measured evidence that light-attack detection is the
+harder problem for this row-level detector, consistent with the recall-vs-FPR curve above.
 
-**Finding:** with the v1 (base-only) feature set, the light-attack-only day was the weakest fold
-by a wide margin (PR-AUC 0.345 vs. 0.71–0.80 for heavy-only days), concrete evidence that
-row-level light-attack detection was the harder problem under that feature set. With v2's
-session-repeat features (§7), that gap closes almost entirely — 2020-11-21 (light-only) now
-scores 0.9996, on par with the heavy-only folds. This LOTO result is also the leakage check for
-the repeat-count feature itself: each fold's repeat statistics are computed fresh from only that
-fold's own rows, so a held-out day's sessions were never seen by the model in any form before
-scoring, and the near-perfect PR-AUC still holds.
+## 8. Window-level alerting — a reported experiment, not the alerting unit
 
-## 9. Why Track 2 is a cascade, not a cancelled track
+The brief permits changing the alerting unit: *"For window- or session-level systems, report the
+above at the actual alerting unit and explain how packet/query predictions are aggregated."* We
+tested this directly rather than assuming it would help.
 
-Early in Phase 1, a data audit found no row-level join between the stateless and stateful tables,
-and that a capture-file-level session unit (only 18 files, 1-2 benign per day) makes FPR=0.1%
-unmeasurable at that granularity. That finding is real and was independently re-verified
-(zero shared columns between a stateless/stateful pair; no reliable row ordering to reconstruct
-sub-file windows either). It was initially read as grounds to drop Track 2 entirely and pivot the
-decision unit to row-level.
+**Method** (`src/eval/window_alerting.py`): non-overlapping windows of N consecutive rows within
+one `session_id` (never crosses a capture-file or collection-day boundary, by construction). A
+window alerts if the fraction of its rows scoring above row-threshold `t` reaches `k/N`. All three
+(N, t, k/N) grid-searched on `val_thr` only; `test` scored once.
 
-The brief itself treats this differently: Track 2's own success criteria list *"graceful behavior
-when stateful context or enrichment is unavailable"* as a strength, and the "what the data can/cannot
-support" section explicitly anticipates that *"some stateful features depend on historical windows
-or context... a real-time claim must explain how that context would be obtained and at what
-cost"* — i.e. exactly this constraint is what Track 2 wants engaged with, not avoided.
+| Setting | val_thr recall / FPR | test recall / FPR (dense, pure captures) | test recall (diluted mixed-traffic stress test) |
+|---|---|---|---|
+| Row-level v1 (§7) | — | 10.78% / 4.12% (61,567 benign rows) | not applicable — row-level, no aggregation |
+| Window N=200, t=0.7143, k/N=0.10 | 51.5% / 4.2% | **45.69%** / 4.22% (308 benign windows) | **0%** |
+| Window N=200, t=0.7143, k/N=0.02 | — | 41.12% / 15.58% (308 benign windows) | **18.2%** |
 
-**Resolution:** the row-level pivot for the always-on detector stands (§7 headline numbers), and
-Track 2 is delivered as a cascade on top of it, escalating to session-granularity stateful context
-— the finest join level the data actually supports — with an explicit graceful-degradation path
-when that context is unavailable. See §10.
+**Why window-level numbers look strong and why we don't trust them as the headline:** every one of
+this dataset's captures is single-composition (§3, §9). A non-overlapping window's label ("does it
+contain any attack row") is therefore almost always identical to its capture's label — window-level
+alerting is close to reclassifying *captures*, at a different name. The 308 benign windows above
+all come from **one** benign capture file. Row-level has 61,567 independent benign rows; window-
+level has 308 correlated ones drawn from a single source. That is not a statistical-power argument
+we can wave away.
 
-## 10. Track 2 cascade
+**The mixed-traffic stress test confirms it in practice, not just in theory.** We built a synthetic
+capture interleaving 1 attack row per 20 benign rows (3,078 attack rows in 64,638 total,
+order-preserved within each source — the closest available approximation of the brief's own
+"real session mixing normal queries with a slow, low-volume exfil channel"). At the tuned
+operating point (k/N=0.10), **recall drops to 0%** — the diluted stream never pushes any window's
+alert fraction above 0.085, short of the 0.10 threshold. A looser setting (k/N=0.02) partially
+recovers 18.2% recall, at the cost of a much higher false-alert rate on pure captures (15.6% FPR).
 
-Stage 1 = §7's stateless model. Escalation trigger: fraction of a session's rows scoring
-above the original paper's own "suspicious" band (raw score >= 0.4) exceeding delta=0.5 (tuned on
-val_thr's 3 sessions). Stage 2 = transparent majority vote over the 3 stateful features with the
-largest train-set benign/attack mean gap (`sf_ttl_mean`, `sf_rr_name_length`, `sf_ttl_variance`) —
+**We are reporting both regimes rather than picking a favorite:** k/N=0.10 is tuned for dense,
+pure-composition attack traffic and fails completely once attack queries are diluted into normal
+traffic; k/N=0.02 is more robust to dilution but alerts far more often on ordinary sessions. Neither
+is adopted as the primary alerting unit. **Row-level remains the headline** (§7) because it is the
+only unit in this dataset large enough and independent enough to support a real statistical claim.
+
+**Added cost of window aggregation:** negligible — ~9.5 μs to aggregate a 200-row window (≈0.05
+μs/query amortized), versus Stage 1's ~2,228 μs/query inference cost.
+
+## 9. What this dataset can and cannot evaluate
+
+Three separate experiments this project ran — independently, for different reasons — produced the
+same failure, and it has one cause.
+
+> **Every capture file in CIC-Bell-DNS-EXF-2021 is single-composition: 100% benign or 100% attack,
+> never mixed.** Therefore any decision unit above the individual query — a session-level
+> aggregate feature, a session-level cascade verdict, a window pooling many rows — inherits its
+> label from the capture it was drawn from, not purely from the behavior of the rows inside it.
+> All three of the following produced strong-looking numbers for that same structural reason, and
+> all three degrade or invert once traffic looks like a real mixed session. Row-level decisions are
+> the only unit this dataset can evaluate with real statistical power: 61,567 independent benign
+> test rows, versus 308 benign windows drawn from one capture, versus a cascade decision backed by
+> one benign test session.
+
+**Experiment 1 — session-repeat engineered features (fully rejected).** A diagnostic found that
+test's 39,274 attack rows reduce to only 47 unique base feature combinations — the exfiltration
+tooling replays a small set of query shapes at high volume, while benign traffic rarely repeats a
+shape. We built `sl2_session_repeat_count`/`ratio` — counting how often a row's exact feature
+vector recurs within its own `session_id` — and it drove PR-AUC from 0.627 to **0.99999**.
+
+*Why we did not trust it, before any stress test:* `session_id` is a prohibited shortcut per the
+brief ("session identity... may reveal the label. These identifiers are not valid predictive
+evidence"), and since every session is pure-label, any statistic computed by grouping on it is a
+function of the group's label, not just the row's own behavior.
+
+*Why the leave-one-day-out check was insufficient, and why that matters:* we recomputed the
+repeat-count statistic independently inside each LOTO fold and got near-perfect held-out PR-AUC
+(0.997–1.000) on days never seen in training, and initially read that as ruling out session-
+identity leakage. It does not. The leak is not a memorized session ID — it is the rule *"high
+repeat count → attack,"* and that rule holds in every fold because every fold shares the same
+pure-composition structure. **A test that a broken model passes is not a test.**
+
+*The decisive experiment:* we merged one pure-benign and one pure-attack test session under a
+single synthetic `session_id`, recomputed the feature on the merged group, and rescored with the
+trained model. **PR-AUC collapsed from 0.9999 to 0.082, ROC-AUC to 0.51 (chance), recall to 0%.**
+Digging into why: merging caused the benign rows' own internal repetition to coincidentally match
+some of the same coarse numeric signatures (length/entropy/label-count, not domain text) that the
+attack tool happens to produce, and the model — trained only on pure-composition sessions — had no
+mechanism to handle that and collapsed toward scoring everything near zero.
+
+*The precise claim, stated carefully:* a model trained on pure-composition sessions does not
+transfer to mixed sessions, because the feature's meaning depends on session composition. We are
+**not** claiming the stronger version — "the feature carries no behavioral signal at all" — that
+was not shown; the collapse mixes two distinct effects (loss of the feature's intended meaning,
+and plain distribution shift from a genuinely different input distribution), and we have not
+isolated which dominates. A single-feature check (`sl2_session_repeat_ratio` alone, on pure
+sessions) reached PR-AUC 0.88 — but that number was measured on pure sessions, so it is
+contaminated evidence *about* the contamination, not a mitigating fact, and we report it only as a
+diagnostic, never as a partial defense of the feature.
+
+**Experiment 2 — Track 2 cascade's session-level confirmation (retained, reframed, §10).** Stage
+2's "confirmed → alert whole session" rule gives 100% recall by construction whenever an attack
+session escalates and is confirmed, because every row in a pure-attack session is, definitionally,
+an attack row. That 100% is not evidence the confirmation logic works on partially-attack traffic
+— it is evidence the dataset has no partially-attack sessions to test it against. We keep the
+cascade (it is genuinely useful as an interpretable escalation-and-confirmation step, §10) but do
+not present its 100% recall as proof of anything beyond "it worked on the exact sessions available,
+n=3."
+
+**Experiment 3 — window-level alerting (§8, reported, not adopted).** Same mechanism: a window's
+label is "contains any attack row," which on single-composition captures is nearly identical to
+the capture's own label. The mixed-traffic stress test is the direct confirmation: recall collapses
+to 0% (tuned setting) or partially survives at 18.2% (looser setting) once attack traffic is
+diluted into a realistic stream, exactly mirroring Experiment 1's collapse.
+
+## 10. Track 2 cascade (retained, reframed as an interpretability layer)
+
+Stage 1 = §7's v1 model. Escalation trigger: fraction of a session's rows scoring above the
+original paper's own "suspicious" band (raw score >= 0.4) exceeding delta=0.5 (tuned on val_thr's
+3 sessions). Stage 2 = transparent majority vote over the 3 stateful features with the largest
+train-set benign/attack mean gap (`sf_ttl_mean`, `sf_rr_name_length`, `sf_ttl_variance`) —
 deliberately not a fitted ML classifier, since only 3 benign captures exist in train.
 
-| | One-stage (Stage 1 v2 only) | Two-stage (cascade) |
+| | One-stage (Stage 1 v1 only) | Two-stage (cascade) |
 |---|---|---|
-| Recall (combined) | 97.21% | **100%** |
-| FPR | 0.0% | 0.0% (unchanged) |
-| Precision | 100% | 100% |
-| Light recall | 97.41% | 100% |
-| Heavy recall | 97.19% | 100% |
+| Recall (combined) | 0.229% | 100% |
+| FPR | 0.081% | 0.081% (unchanged) |
+| Precision | 64.3% | 99.9% |
+| Light recall | 0.230% | 100% |
+| Heavy recall | 0.229% | 100% |
+| **Sessions escalated** | — | **2 of 3 test sessions (66.7%)** |
+| **Test sessions total** | — | **3 (2 attack, 1 benign)** |
 
-38.9% of test rows escalated to the expensive path; 61.1% stayed on the cheap Stage-1-only path.
-With v2's session-repeat features, Stage 1 alone now closes almost all of the recall gap Stage 2
-used to cover (was 0.229% → 100%, an entirely Stage-2-driven jump, under v1); the cascade's
-remaining contribution is the last ~2.8 percentage points plus the interpretable stateful
-confirmation step, not carrying the whole detection burden by itself.
+**Escalation margins — how close the rule is to misfiring** (`cascade_report.json:escalation_margins`).
+The escalated-row percentage (38.9%) is unchanged from the rejected v2 model, which initially
+looked like a stale artifact. It is not: the cascade genuinely re-ran on v1
+(`stage1_model_version: stateless_lgbm_v1` recorded in the artifact). The percentage is unchanged
+because the *same two* sessions escalate under both models — but the margins behind that identical
+number are very different:
 
-**Two limitations reported directly in the artifact, not left implicit:**
-1. All 18 capture files in this dataset are single-composition (100% benign or 100% attack — verified
-   programmatically, none mixed). Blanket-alerting a confirmed session's rows is well-matched to
-   that structure but is a testbed artifact: a real session mixing normal queries with a slow,
-   low-volume exfil channel would see every benign query in that session flagged too, producing a
-   much higher false-alert rate than measured here. This maps directly onto the brief's own
-   "controlled environment, not a production network" caveat.
-2. Test has only 3 capture sessions (2 attack, 1 benign); delta was tuned on val_thr's 3 sessions.
-   Real result, not test leakage (delta and discriminative features never touch test), but at n=3
-   sessions it is not a statistically powerful session-level generalization claim. §7's row-level
-   numbers (tens of thousands of rows) remain the primary, statistically meaningful headline.
+| Session | label | `r_sus` (v1) | margin to δ=0.5 | `r_sus` (rejected v2) |
+|---|---|---|---|---|
+| benign_heavy_1 | benign | 0.3796 | **−0.120** | 0.0007 |
+| heavy_audio | attack | 0.9997 | +0.500 | 0.9980 |
+| light_text | attack | 0.9997 | +0.500 | 0.9997 |
+
+Under v1, the benign session sits **0.12 below the escalation cut**, versus 0.50 under v2. The
+escalation rule is far more fragile than the unchanged 38.9% suggests: a modest distribution shift
+in benign traffic would push it over, escalating benign traffic to Stage 2. With n=1 benign test
+session there is no way to estimate how likely that is. Reported because a headline percentage that
+does not move is exactly the kind of number that hides a change underneath it (§9).
+
+**We are not claiming this as a compute-saving cascade (§1).** Stage 2 costs ~165 μs per escalated
+session — negligible next to Stage 1's per-query cost — so there is no meaningful trade-off to
+report between recall and cost. What the cascade genuinely provides: a session flagged only
+weakly by Stage 1 (0.229% row-level recall) can still receive a *confirmed, explainable*
+session-level verdict from three named, human-checkable stateful features, rather than staying an
+unconfirmed weak signal. That is the value — interpretability and confirmation, not efficiency.
+
+**Limitations, in the table above, not buried in prose:** n=3 test sessions, 2 escalated. The
+100% recall is real (not test leakage — delta and discriminative features never touch test) but is
+read correctly as "this design worked cleanly on the specific sessions available," not a
+statistically powerful session-level generalization claim — see §9 for why that number should not
+be over-read.
 
 ## 11. Latency and throughput
 
-**Environment declared** (brief requirement: "declared hardware, software versions, batch size,
-and concurrency"), from `results/metrics/latency_baseline.json:environment` /
-`results/metrics/stage2_latency_report.json:environment`:
+**Environment declared:** OS Windows-11-10.0.26200-SP0; AMD64 Family 23 Model 104 Stepping 1,
+AuthenticAMD, 12 logical CPUs; Python 3.12.5; LightGBM 4.7.0, scikit-learn 1.7.2, numpy 2.3.2;
+concurrency 1 (single-threaded, sequential calls).
 
-| | |
-|---|---|
-| OS | Windows-11-10.0.26200-SP0 |
-| Processor | AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD, 12 logical CPUs |
-| Python | 3.12.5 |
-| LightGBM | 4.7.0 · scikit-learn 1.7.2 · numpy 2.3.2 |
-| Concurrency | 1 (single-threaded, sequential calls — no concurrent/async execution measured) |
-
-`src/latency/harness.py`, empirical benchmark, LightGBM stateless classifier, 14 base features.
-**Median and p95 are computed from per-call latency distributions** (`n=500` single-query calls,
-`n=100` batches of 128, `n=1000` extraction calls), not derived from a single averaged wall-clock
-figure — this is the fix that closes the brief's explicit "median and p95 processing latency"
-requirement, which the previous mean-only version did not satisfy:
+`src/latency/harness.py`, LightGBM stateless classifier, **14 base features — matches the v1
+model actually reported as the headline** (no mismatch between the model measured and the model
+claimed, unlike the pre-revert version of this report). Median and p95 computed from per-call
+latency distributions, not a single averaged figure:
 
 | Mode | Mean | Median | p95 | Throughput |
 |---|---|---|---|---|
 | Single-query (batch=1) | 2,228.4 μs/query | 2,221.7 μs/query | 2,751.3 μs/query | 448.8 QPS |
 | Batched (batch=128) | 22.3 μs/query | 21.9 μs/query | 28.3 μs/query | 44,855.7 QPS |
 
-(Absolute values shift run-to-run with background system load — a documented property of
-wall-clock measurement on a shared OS, not a modelling change; batching's ~100x throughput
-multiplier over single-query mode is the stable, reportable finding.)
+Batching gives roughly two orders of magnitude throughput improvement, almost entirely from
+amortizing per-call inference overhead.
 
-Batching gives roughly two orders of magnitude of throughput improvement — almost entirely from
-amortizing per-call inference overhead, not feature extraction (which stays under a few
-microseconds per query in both modes).
-
-**Stage 2 added cost** (`src/latency/stage2_harness.py`, `results/metrics/stage2_latency_report.json`):
+**Stage 2 added cost** (`src/latency/stage2_harness.py`):
 
 | Cost component | When paid | Mean | Median | p95 |
 |---|---|---|---|---|
-| One-time stateful context build (18 capture files, `ast.literal_eval` parsing of ~262K stateful rows) | Once per enrichment refresh — batch/offline, not on the query path | 27.8s (n=3: 27.2–28.4s) | n/a — 3 repeats too few for a percentile; min/max shown instead | n/a |
-| Marginal per-escalated-session decision (dict lookup + majority vote over 3 features) | Once per escalating session (18 sessions total in this dataset) | 164.8 μs | 145.5 μs | 272.1 μs (n=2,000) |
+| One-time stateful context build (18 files) | Once per enrichment refresh, offline | 27.8s (n=3: 27.2–28.4s) | n/a (n too small) | n/a |
+| Marginal per-escalated-session decision | Once per escalating session | 164.8 μs | 145.5 μs | 272.1 μs |
 
-**One-stage vs. two-stage comparison:** Stage 1 alone costs 2,228.4 μs/query mean (2,751.3 μs p95,
-batch=1). Stage 2's marginal cost (164.8 μs mean, 272.1 μs p95) is paid once per *session*, not
-once per query — spread across even a single escalated session's rows, the per-query overhead it
-adds is negligible, and 38.9% of test rows belong to an escalated session
-(`results/metrics/cascade_report.json`). The real cost driver is the one-time context build
-(27.8s), and it is explicitly a batch/offline operation run against the enrichment source, not
-part of the live per-query decision path — this is the "measured compute savings" the Track 2
-brief asks for: the expensive step is amortized across an entire session's traffic, not repeated
-per row.
+**Window aggregation added cost** (§8): ~9.5 μs per 200-row window (≈0.05 μs/query amortized) —
+negligible next to Stage 1's inference cost.
 
 ## 12. Failure analysis
 
-`src/eval/failure_analysis.py` (v2 model, threshold 0.99985). Full detail in
-`results/metrics/failure_analysis.json`.
+`src/eval/failure_analysis.py`, v1 model, threshold 0.7262. Full detail in
+`results/metrics/failure_analysis.json`. At this threshold, v1 has 39,184 false negatives and 50
+false positives on test (matches §7's confusion matrix at the FPR≈4.1% headline point).
 
-**False positives: zero, at the current operating threshold** (precision 100% on `test`, see §7).
-Rather than invent an FP example, the table below shows the 5 highest-scoring BENIGN rows in
-test — the closest calls that never crossed the alert threshold — explicitly labelled as
-near-misses, not actual failures.
+**Worst 5 false negatives** (lowest raw score among missed attack rows):
 
-**Worst 5 false negatives** (lowest raw score among missed attack rows — the model was most
-confident these were benign):
+| unit_id (truncated) | category | raw score | `sl_len` | `sl_entropy` | `sl_labels` | `sl_fqdn_count` |
+|---|---|---|---|---|---|---|
+| `light_text.pcap.csv_3245` | light | 0.00001 | 13 | 2.65 | 3 | 17 |
+| `heavy_audio.pcap.csv_2080` | heavy | 0.00001 | 6 | 2.15 | 3 | 10 |
+| `heavy_audio.pcap.csv_2081` | heavy | 0.00018 | 13 | 3.11 | 3 | 16 |
+| `heavy_audio.pcap.csv_2176` | heavy | 0.00018 | 13 | 3.11 | 3 | 16 |
+| `heavy_audio.pcap.csv_11143` | heavy | 0.05647 | 8 | 2.03 | 3 | 12 |
 
-| unit_id (truncated) | category | raw score | `sl2_session_repeat_count` | `sl_entropy` | `sl_len` |
+**Pattern:** every worst-FN row is short (`sl_len` 6–13) with unremarkable entropy (2.0–3.1) — this
+is the direct, row-level illustration of §6's baseline finding: length has real signal here, and
+these are exactly the short, low-signal queries a length-sensitive detector will miss. This is the
+honest face of the 10.8%-recall ceiling reported in §7, not an edge case.
+
+**Worst 5 false positives** (highest raw score among benign rows the model wrongly alerted on):
+
+| unit_id (truncated) | raw score | `sl_len` | `sl_entropy` | `sl_labels` | `sl_fqdn_count` |
 |---|---|---|---|---|---|
-| `heavy_audio.pcap.csv_2080` | heavy | 0.0011 | 1.0 | 2.15 | 6 |
-| `light_text.pcap.csv_3245` | light | 0.0015 | 1.0 | 2.65 | 13 |
-| `heavy_audio.pcap.csv_28369` | heavy | 0.0080 | 2.0 | 2.53 | 11 |
-| `heavy_audio.pcap.csv_28370` | heavy | 0.0080 | 2.0 | 2.53 | 11 |
-| `heavy_audio.pcap.csv_2081` | heavy | 0.0145 | 2.0 | 3.11 | 13 |
+| `benign_heavy_1.pcap.csv_15389` | 0.8787 | 14 | 3.25 | 3 | 18 |
+| `benign_heavy_1.pcap.csv_15439` | 0.8676 | 27 | 3.78 | 5 | 31 |
+| `benign_heavy_1.pcap.csv_16478` | 0.8676 | 27 | 3.78 | 5 | 31 |
+| `benign_heavy_1.pcap.csv_29135` | 0.8676 | 27 | 3.78 | 5 | 31 |
+| `benign_heavy_1.pcap.csv_1275` | 0.8146 | 19 | 3.46 | 3 | 23 |
 
-**Pattern:** every worst-FN row has `sl2_session_repeat_count` of 1–2 — these are the rare
-non-repeating queries inside otherwise-repetitive attack sessions (§7's dominant feature). The
-model's strongest signal is repetition; a session's few one-off queries don't carry it, so they
-score low even though the session overall is confidently flagged. This is a direct, quantitative
-illustration of the §13 limitation: the repeat-count signal is a session-level behavioral
-pattern, and individual non-repeating rows within an attack session are its blind spot.
+**Pattern:** the false positives are long, high-entropy benign queries (`sl_len` 14–27,
+entropy 3.25–3.78) — legitimate traffic that happens to look structurally similar to the longer,
+higher-entropy end of the attack distribution. This is the same length/entropy signal from §6
+working correctly in general but producing false alarms on the benign queries that sit at its
+upper tail — a real, expected precision/recall trade-off at this operating point, not a distinct
+bug.
 
-**Top 5 highest-scoring benign rows (near-misses, not false positives):**
+## 13. Track 3 support: analyst case view (`app/streamlit_app.py`)
 
-| unit_id (truncated) | raw score | `sl2_session_repeat_count` | `sl_entropy` | `sl_len` |
-|---|---|---|---|---|
-| `benign_heavy_1.pcap.csv_11239` | 0.9969 | 20.0 | 3.79 | 25 |
-| `benign_heavy_1.pcap.csv_15396` | 0.9969 | 20.0 | 3.79 | 25 |
-| `benign_heavy_1.pcap.csv_15496` | 0.9969 | 20.0 | 3.79 | 25 |
-| `benign_heavy_1.pcap.csv_16475` | 0.9969 | 20.0 | 3.79 | 25 |
-| `benign_heavy_1.pcap.csv_16517` | 0.9969 | 20.0 | 3.79 | 25 |
+Declared primary track remains Track 1 (§1). This is a supporting Track 3 layer over the
+already-evaluated Stage 1 detector and cascade — no separate detector, baseline, or metric set of
+its own. **TODO:** the Streamlit app currently loads `models/stateless_lgbm.pkl` (the rejected v2
+bundle) by default — must repoint it to `stateless_lgbm_v1.pkl` before the demo, or it will show
+the 0.9999 number this report just explained is not trustworthy.
 
-**Pattern:** the same repeated benign query (`benign_heavy_1`, repeat_count=20, long/high-entropy
-subdomain) is the closest this model comes to a false alarm — a benign host that legitimately
-issues the same somewhat unusual-looking query 20 times still scores well below the ~7,000+
-repeat counts typical of attack sessions (§7), so it never crosses the threshold. This is the
-concrete evidence behind §13's limitation that a production session with more benign repetition
-than this testbed's benign traffic could erode that margin.
+- **Case Queue tab:** risk-sorted triage queue, per-query SHAP reason codes, decision band, the
+  row's cascade session status, and a disposition control (approve / dismiss / escalate) —
+  advisory only, no button blocks DNS or takes automated action.
+- **Session Evidence tab:** for escalated sessions, the Stage 2 majority vote and each
+  discriminative stateful feature's value against the train-set benign/attack midpoint.
+- **Model Card tab:** PR-AUC/recall/precision, the leave-one-day-out fold table, global SHAP
+  feature importance, and the one-stage-vs-two-stage cascade comparison.
+- **Uncertainty states:** the cascade's `escalated_unconfirmed_human_review` and
+  `escalated_context_unavailable_fallback_stage1` verdicts surface directly as distinct badges.
 
-## 13. Limitations
+## 14. Limitations
 
-- Controlled testbed, not a production network (dataset's own stated boundary) — reinforced
-  concretely by §10's single-composition-capture finding, not just asserted.
-- **The v2 session-repeat features (§7) owe their strength to this dataset's structure, and we
-  say so plainly rather than let a near-perfect number speak for itself:** exfiltration tooling in
-  this testbed replays a small, fixed set of query shapes at high volume within a session, and
-  every capture file is single-composition (§10). A production network with mixed-traffic
-  sessions and more heterogeneous exfil tooling would likely show a smaller repeat-count gap
-  between benign and attack traffic than the near-total separation measured here. We validated the
-  feature is not literal session-identity leakage (LOTO with fold-independent repeat statistics,
-  §7–§8), but "not leakage" and "will generalize this cleanly to production traffic" are different
-  claims — only the first one is what we're asserting.
-- Light-attack detection was the harder problem under the v1 (base-only) feature set — evidenced
-  quantitatively in the original run (14.5% precision, 0.345 PR-AUC on the light-only LOTO day).
-  v2's repeat-count features close most of that gap (§7, §8); we still flag this because the
-  underlying reason light attacks were hard — low per-query signal — hasn't disappeared, it's the
-  repeat-count feature compensating for it, which is itself the finding above.
-- Session-level cascade claims are backed by only 3 test sessions — real, not leakage, but
-  explicitly not treated as statistically powerful (§10).
+- Controlled testbed, not a production network — reinforced concretely by §9's single-composition-
+  capture finding across three independent experiments, not just asserted once.
+- **Row-level detection gives 10.8% recall at ~4% FPR, or 47.1% recall at ~18% FPR (§7).** There is
+  no operating point between those two — a 15-point FPR cliff caused by score quantization (10,662
+  benign rows tied at one score) makes the intervening band unreachable at any threshold. Neither
+  number is dressed up: 4% FPR is modest recall, and 18% FPR is ~1,795 false alerts per 10k benign
+  queries, which many teams could not staff. Light-attack detection remains the harder problem
+  (§7b's LOTO finding), and no feature-engineering attempt so far has improved it without relying
+  on the single-composition-capture artifact described in §9.
+- The ML model's advantage over the non-ML rule baseline is modest and concentrated in ranking
+  quality, not at the tight operating point, where the rule is competitive on precision at equal
+  recall (§6b) — reported rather than framed around a more flattering comparison.
+- The cascade's escalation rule has a −0.12 margin on the single benign test session (§10) — much
+  narrower than the identical 38.9% escalation figure implies, and unestimable at n=1.
+- Session-repeat features, session-level cascade confirmation, and window-level aggregation all
+  degrade or invert under interleaved/mixed traffic (§9) — this is the central, disclosed
+  limitation of this entire submission, not a footnote.
+- Cascade and window-level claims are backed by 3 test sessions / 308 correlated windows from one
+  capture respectively — real results, not test leakage, but explicitly not statistically powerful
+  claims (§9, §10).
 - `collection_day` is not disjoint across dev-split partitions by design (§4) — mitigated by the
-  independent leave-one-day-out check (§8), not left unaddressed.
+  independent leave-one-day-out check (§7b).
 - No claim of generalization to unseen real-world exfiltration tooling, DGA traffic, or production
   DNS infrastructure — out of scope per the brief itself.
 
-## 14. Track 3 support: analyst case view (`app/streamlit_app.py`)
-
-Declared primary track remains Track 2. This is a supporting Track 3 (Analyst Investigation &
-Explanation) layer over the already-evaluated cascade — no separate detector, baseline, or metric
-set of its own; every number displayed reads from `results/metrics/*.json`, generated by the
-evaluation pipeline. Per the brief's own warning, *"a polished dashboard without validated
-detection evidence is not sufficient"* — this view exists because the detection evidence (§7-§10)
-already exists, not instead of it.
-
-- **Case Queue tab:** risk-sorted triage queue, per-query SHAP reason codes (`src/explain/shap_explain.py`,
-  exact `TreeExplainer` contributions, not approximations), decision band (benign / suspicious /
-  alert), the row's cascade session status, and a disposition control (approve / dismiss /
-  escalate) that records a UI-session-only choice — no button blocks DNS, quarantines a host, or
-  changes any live system, per the project's own advisory-only safety constraint.
-- **Session Evidence tab:** for escalated sessions, the Stage 2 majority vote and each
-  discriminative stateful feature's value against the train-set benign/attack midpoint — directly
-  satisfies Track 3's "comparison with similar benign activity" criterion using artifacts the
-  cascade already produces (`cascade.py`'s `detail` field, previously computed but stripped before
-  saving; now retained).
-- **Model Card tab:** PR-AUC/recall/precision, the leave-one-day-out fold table, global SHAP
-  feature importance, and the one-stage-vs-two-stage cascade comparison — the same headline numbers
-  as §7-§10, in one place for a judge to check without opening JSON files.
-- **Uncertainty states:** the cascade's existing `escalated_unconfirmed_human_review` and
-  `escalated_context_unavailable_fallback_stage1` verdicts surface directly as distinct badges —
-  this is Track 3's "insufficient evidence" requirement, already produced by the cascade's design
-  (§10), not added for the UI.
-
-Verified running end-to-end in the browser (all three tabs, SHAP explanation render, session
-expander, disposition buttons) — not just written and assumed to work.
-
 ## TODO before submission
 
-- [ ] Demo script + rehearsal (benign / light / heavy cases, cascade decision, SHAP, metrics table, close on limitations)
-- [ ] Results Bundle deliverable (organizer test-ID predictions, scoring output, threshold record)
-- [ ] Data & Model Statement deliverable (snapshot version + SHA-256, no external services — data mostly assembled in `results/metrics/provenance.json`, needs to be written up as its own deliverable doc)
+- [ ] Regenerate `results/metrics/failure_analysis.json` against v1 and update §12's table
+- [ ] Repoint `app/streamlit_app.py` to `models/stateless_lgbm_v1.pkl` and re-verify in browser
+- [ ] Demo script + rehearsal (benign / light / heavy cases, row score + SHAP, window-level alert
+      on a light case, uncertainty state, metrics table, close on §9's rejected-approach story,
+      limitations slide)
+- [ ] Results Bundle deliverable (test-ID predictions, scoring output, threshold selection record,
+      model/config version)
+- [ ] Data & Model Statement deliverable (snapshot version + SHA-256, no external services)
+- [ ] Fresh-clone reproducibility check (single command reproduces the v1 headline score)

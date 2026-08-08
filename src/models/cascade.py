@@ -115,16 +115,22 @@ def _score_stage1(df: pd.DataFrame, model, features: list) -> pd.DataFrame:
     return df
 
 
-def run_cascade() -> dict:
-    bundle = joblib.load("models/stateless_lgbm.pkl")
+def run_cascade(model_name: str = "stateless_lgbm_v1") -> dict:
+    """Defaults to v1 (base 14 features) -- the surviving headline Stage 1 detector.
+    The rejected v2 (session-repeat) bundle can still be loaded by name for the
+    'what this dataset can and cannot evaluate' report section's evidence, but is
+    never the default again."""
+    bundle = joblib.load(f"models/{model_name}.pkl")
     model = bundle["model"]
-    # Use feature list stored in bundle -- picks up engineered features automatically.
     features = bundle.get("features") or get_schema_lock()["stateless_features"]
-    stage1_threshold = json.load(open("models/stateless_threshold.json"))["threshold"]
+    threshold_file = "models/stateless_threshold_v1.json" if model_name == "stateless_lgbm_v1" else "models/stateless_threshold.json"
+    stage1_threshold = json.load(open(threshold_file))["threshold"]
 
-    train = _score_stage1(build_engineered_features(load_split("train")), model, features)
-    val_thr = _score_stage1(build_engineered_features(load_split("val_thr")), model, features)
-    test = _score_stage1(build_engineered_features(load_split("test")), model, features)
+    needs_engineered = any(f.startswith("sl2_") for f in features)
+    loader = build_engineered_features if needs_engineered else (lambda df: df)
+    train = _score_stage1(loader(load_split("train")), model, features)
+    val_thr = _score_stage1(loader(load_split("val_thr")), model, features)
+    test = _score_stage1(loader(load_split("test")), model, features)
 
     context_by_token = _build_token_indexed_context()
 
@@ -192,6 +198,20 @@ def run_cascade() -> dict:
             test.loc[mask, "session_verdict"] = "escalated_context_unavailable_fallback_stage1"
 
     report = _build_comparison_report(test, discriminative_features, chosen_delta, delta_sweep, session_verdicts)
+    report["stage1_model_version"] = bundle.get("model_version", model_name)
+    report["stage1_threshold"] = stage1_threshold
+    # Escalation margin: how close each session's r_sus sits to the delta cut. With only 3
+    # sessions this is the honest measure of how fragile the escalation rule is -- a benign
+    # session sitting just under delta means the rule is one distribution shift away from
+    # escalating benign traffic. Reported because the escalated-row PERCENTAGE alone hides it.
+    test_r_sus = _session_r_sus(test)
+    session_labels = test.groupby("base_trace")["label"].max()
+    report["escalation_margins"] = {
+        token: {"r_sus": float(v), "label": int(session_labels.get(token, 0)),
+                "margin_to_delta": float(v - chosen_delta),
+                "escalated": bool(v > chosen_delta)}
+        for token, v in test_r_sus.items()
+    }
     _save_artifacts(report, test)
     print(json.dumps({k: v for k, v in report.items() if k not in ("session_verdicts",)}, indent=2))
     return report

@@ -1,0 +1,168 @@
+{
+  "limitations": [
+    "Every one of the 18 capture files in this dataset is single-composition (100% benign OR 100% attack rows, verified programmatically -- none mix both). Blanket-alerting every row in an escalated+confirmed session is well-matched to that structure but is a testbed artifact, not a property a production DNS session would have: a real session mixing normal queries with a slow, low-volume exfil channel would see this design flag every benign query in that session too, producing a much higher false-alert rate than measured here. This ties directly to the challenge brief's own acknowledged limitation ('controlled environment: traffic and labels come from a testbed, not a production network') -- it is not a novel caveat invented for this report.",
+    "TEST has only 3 capture sessions (2 attack, 1 benign) and the escalation delta was tuned on val_thr's 3 sessions. The 100% recall / near-zero FPR result is real and not the product of test leakage (delta chosen on val_thr only, discriminative stateful features chosen on train only), but at n=3 test sessions it should be read as 'this design worked cleanly on the specific sessions available', not as a statistically powerful claim about session-level generalization -- the row-level Stage 1 metrics (tens of thousands of rows) remain the statistically meaningful headline number."
+  ],
+  "discriminative_stateful_features": [
+    {
+      "feature": "sf_ttl_mean",
+      "gap": 81.20292175215837,
+      "attack_side": "lower",
+      "benign_mean": 93.1722349456657,
+      "attack_mean": 11.96931319350733
+    },
+    {
+      "feature": "sf_rr_name_length",
+      "gap": 7.818401456791278,
+      "attack_side": "higher",
+      "benign_mean": 17.5439626589759,
+      "attack_mean": 25.36236411576718
+    },
+    {
+      "feature": "sf_ttl_variance",
+      "gap": 3.4898769292473415,
+      "attack_side": "lower",
+      "benign_mean": 3.490852646890051,
+      "attack_mean": 0.0009757176427098042
+    }
+  ],
+  "escalation_delta_sweep_on_val_thr_n3": [
+    {
+      "delta": 0.5,
+      "n_sessions_escalated": 2,
+      "n_of_3_val_sessions_total": 3,
+      "escalated_sessions_that_are_positive": 2
+    },
+    {
+      "delta": 0.6,
+      "n_sessions_escalated": 2,
+      "n_of_3_val_sessions_total": 3,
+      "escalated_sessions_that_are_positive": 2
+    },
+    {
+      "delta": 0.7,
+      "n_sessions_escalated": 2,
+      "n_of_3_val_sessions_total": 3,
+      "escalated_sessions_that_are_positive": 2
+    },
+    {
+      "delta": 0.8,
+      "n_sessions_escalated": 2,
+      "n_of_3_val_sessions_total": 3,
+      "escalated_sessions_that_are_positive": 2
+    },
+    {
+      "delta": 0.9,
+      "n_sessions_escalated": 2,
+      "n_of_3_val_sessions_total": 3,
+      "escalated_sessions_that_are_positive": 2
+    }
+  ],
+  "chosen_escalation_delta": 0.5,
+  "pct_test_rows_escalated_to_stage2": 0.3894646026913656,
+  "n_test_rows_escalated_to_stage2": 39274,
+  "pct_test_rows_stage1_only_cheap_path": 0.6105353973086344,
+  "session_verdicts": {
+    "light_text": {
+      "escalated": true,
+      "stateful_context_available": true,
+      "confirmed": true,
+      "votes_attack_like": 3,
+      "votes_total": 3,
+      "detail": [
+        {
+          "feature": "sf_ttl_mean",
+          "value": 11.953311617806731,
+          "midpoint": 52.57077406958652,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_rr_name_length",
+          "value": 25.376764386536372,
+          "midpoint": 21.45316338737154,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_ttl_variance",
+          "value": 0.0,
+          "midpoint": 1.7459141822663804,
+          "attack_like": true
+        }
+      ]
+    },
+    "heavy_audio": {
+      "escalated": true,
+      "stateful_context_available": true,
+      "confirmed": true,
+      "votes_attack_like": 3,
+      "votes_total": 3,
+      "detail": [
+        {
+          "feature": "sf_ttl_mean",
+          "value": 10.937680484396832,
+          "midpoint": 52.57077406958652,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_rr_name_length",
+          "value": 25.214625058220772,
+          "midpoint": 21.45316338737154,
+          "attack_like": true
+        },
+        {
+          "feature": "sf_ttl_variance",
+          "value": 0.0025151374010246854,
+          "midpoint": 1.7459141822663804,
+          "attack_like": true
+        }
+      ]
+    },
+    "benign_heavy_1": {
+      "escalated": false
+    }
+  },
+  "one_stage_stage1_only": {
+    "tp": 38179,
+    "fp": 0,
+    "fn": 1095,
+    "tn": 61567,
+    "recall": 0.9721189591078067,
+    "fpr": 0.0,
+    "precision": 1.0,
+    "false_alerts_per_10k_benign": 0.0
+  },
+  "two_stage_cascade": {
+    "tp": 39274,
+    "fp": 0,
+    "fn": 0,
+    "tn": 61567,
+    "recall": 1.0,
+    "fpr": 0.0,
+    "precision": 1.0,
+    "false_alerts_per_10k_benign": 0.0
+  },
+  "light_only": {
+    "one_stage": {
+      "tp": 3389,
+      "fn": 90,
+      "recall": 0.9741304972693303
+    },
+    "two_stage": {
+      "tp": 3479,
+      "fn": 0,
+      "recall": 1.0
+    }
+  },
+  "heavy_only": {
+    "one_stage": {
+      "tp": 34790,
+      "fn": 1005,
+      "recall": 0.9719234529962285
+    },
+    "two_stage": {
+      "tp": 35795,
+      "fn": 0,
+      "recall": 1.0
+    }
+  }
+}

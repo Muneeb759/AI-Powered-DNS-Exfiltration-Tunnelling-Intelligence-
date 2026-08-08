@@ -34,22 +34,30 @@ SEED = 20260808
 OPERATING_FPR = 0.001
 
 
-def run_leave_one_day_out() -> dict:
+def run_leave_one_day_out(use_engineered: bool = False) -> dict:
+    """use_engineered=False (default): v1 base-14-feature model -- the surviving
+    headline detector. use_engineered=True reruns the v2 (session-repeat) LOTO
+    check, kept ONLY as evidence for the "what this dataset can and cannot
+    evaluate" report section -- it is what falsely looked like a passed leakage
+    check before the mixed-session stress test (see src/models/stateless_model.py
+    docstring, report.md). Never treat a use_engineered=True result as a headline
+    number again."""
     schema = get_schema_lock()
-    features = schema["stateless_features"] + ENGINEERED_FEATURES
+    base_features = schema["stateless_features"]
+    features = base_features + ENGINEERED_FEATURES if use_engineered else list(base_features)
+    suffix = "_v2_rejected" if use_engineered else ""
 
+    loader = build_engineered_features if use_engineered else (lambda df: df)
     full_df = load_raw()
     eligible_days = sorted(full_df["collection_day"].unique())
 
     folds = []
     for day in eligible_days:
-        # Engineered features (incl. sl2_session_repeat_count/ratio) are recomputed
-        # independently within each fold's rest/held split -- the held-out day's rows
-        # never contribute to the training fold's repeat statistics, and vice versa.
-        # This is what confirms the repeat-count signal is a generalizable behavioral
-        # pattern, not a session-identity fingerprint memorized during training.
-        rest = build_engineered_features(full_df[full_df["collection_day"] != day])
-        held = build_engineered_features(full_df[full_df["collection_day"] == day])
+        # Engineered features (incl. sl2_session_repeat_count/ratio), when enabled, are
+        # recomputed independently within each fold's rest/held split -- see the
+        # module docstring on why that check was insufficient and is not relied on.
+        rest = loader(full_df[full_df["collection_day"] != day])
+        held = loader(full_df[full_df["collection_day"] == day])
 
         model = lgb.LGBMClassifier(
             objective="binary", n_estimators=300, num_leaves=31, learning_rate=0.05,
@@ -87,14 +95,20 @@ def run_leave_one_day_out() -> dict:
 
     report = {
         "protocol": "leave-one-day-out (5 eligible days; 2020-11-25 excluded, zero benign rows)",
+        "model_version": "stateless_lgbm_v2_rejected" if use_engineered else "stateless_lgbm_v1",
         "operating_fpr_target": OPERATING_FPR,
         "feature_set": features,
         "session_repeat_feature_note": (
-            "sl2_session_repeat_count/ratio are recomputed independently within each fold's "
-            "train/held split (see src/features/stateless_engineered.py). High held-out PR-AUC "
-            "here, on a day whose sessions never appear in that fold's training data, is the "
-            "leakage check confirming the repeat-count signal generalizes to sessions the model "
-            "has never seen -- not a session-identity fingerprint memorized during training."
+            "REJECTED, kept as evidence only: sl2_session_repeat_count/ratio were recomputed "
+            "independently within each fold's train/held split, and this LOTO check appeared to "
+            "pass (near-perfect held-out PR-AUC). It did not actually rule out leakage -- see the "
+            "'what this dataset can and cannot evaluate' report section: recomputing the "
+            "statistic inside each fold reproduces the single-composition-capture artifact "
+            "rather than breaking it, because every fold shares that same structure. The "
+            "decisive test was the mixed-session stress test, not this one."
+        ) if use_engineered else (
+            "N/A for v1 -- v1 uses only the 14 base gated stateless features, none of which "
+            "are session-derived aggregates."
         ),
         "folds": folds,
         "fold_to_fold_variation": {
@@ -111,7 +125,7 @@ def run_leave_one_day_out() -> dict:
 
     out_dir = Path("results/metrics")
     out_dir.mkdir(parents=True, exist_ok=True)
-    with open(out_dir / "leave_one_day_out_report.json", "w") as f:
+    with open(out_dir / f"leave_one_day_out_report{suffix}.json", "w") as f:
         json.dump(report, f, indent=2)
 
     print(json.dumps({"fold_to_fold_variation": report["fold_to_fold_variation"]}, indent=2))

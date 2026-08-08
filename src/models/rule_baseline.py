@@ -18,19 +18,36 @@ OPERATING_FPR = 0.001
 
 def fit_rule_score(train: pd.DataFrame) -> dict:
     """Mandatory non-ML baseline: query length + Shannon entropy, combined as a
-    z-score sum. Fit (mean, std) on train only, per the brief's 'fit on training
-    data only' requirement -- the rule itself is fixed a priori, but its
-    normalization constants must not see val/test."""
+    signed z-score sum. Fit (mean, std, sign) on train only, per the brief's 'fit
+    on training data only' requirement.
+
+    BUG FOUND AND FIXED: naively summing z(sl_len) + z(sl_entropy) drove ROC-AUC to
+    ~0.499 (exactly chance) on this dataset. Diagnosis: sl_len alone has real signal
+    on train (ROC-AUC 0.63, attack queries are longer) but sl_entropy alone points
+    the OPPOSITE direction on this dataset (ROC-AUC 0.449 -- attack entropy is
+    slightly LOWER than benign here, contrary to the textbook "exfil payloads are
+    high-entropy" assumption). Adding the two raw z-scores cancels the length
+    signal against the (backwards, for this data) entropy signal, producing an
+    apparently-broken baseline that was actually two real signals fighting each
+    other. Fix: determine each feature's sign from TRAIN data only (whichever
+    direction correlates with the attack class there), so both terms point the
+    same way. This is a standard non-ML baseline convention (same sign-direction
+    logic already used in src/models/cascade.py's discriminative feature ranking),
+    not new modelling -- the rule and its two input features are unchanged."""
     stats = {}
     for feat in RULE_FEATURES:
-        stats[feat] = {"mean": float(train[feat].mean()), "std": float(train[feat].std() or 1.0)}
+        benign_mean = float(train.loc[train["label"] == 0, feat].mean())
+        attack_mean = float(train.loc[train["label"] == 1, feat].mean())
+        sign = 1.0 if attack_mean > benign_mean else -1.0
+        stats[feat] = {"mean": float(train[feat].mean()), "std": float(train[feat].std() or 1.0),
+                       "sign": sign, "train_benign_mean": benign_mean, "train_attack_mean": attack_mean}
     return stats
 
 
 def score_rule(df: pd.DataFrame, stats: dict) -> np.ndarray:
     z_sum = np.zeros(len(df), dtype=np.float64)
     for feat in RULE_FEATURES:
-        z_sum += (df[feat].values - stats[feat]["mean"]) / stats[feat]["std"]
+        z_sum += stats[feat]["sign"] * (df[feat].values - stats[feat]["mean"]) / stats[feat]["std"]
     return z_sum
 
 

@@ -26,20 +26,20 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from src.data.load import load_split
-from src.features.stateless_engineered import build_engineered_features, ENGINEERED_FEATURES
 
 REPORT_FEATURES = [
     "sl_fqdn_count", "sl_subdomain_length", "sl_upper", "sl_lower", "sl_numeric",
-    "sl_entropy", "sl_special", "sl_labels", "sl_len",
-] + ENGINEERED_FEATURES
+    "sl_entropy", "sl_special", "sl_labels", "sl_len", "sl_labels_max",
+    "sl_labels_average", "sl_subdomain_flag", "sl_longest_word_len", "sl_numeric_ratio",
+]
 
 
 def run_failure_analysis(top_k: int = 5) -> dict:
-    bundle = joblib.load("models/stateless_lgbm.pkl")
+    bundle = joblib.load("models/stateless_lgbm_v1.pkl")
     model, features = bundle["model"], bundle["features"]
-    threshold = json.load(open("models/stateless_threshold.json"))["threshold"]
+    threshold = json.load(open("models/stateless_threshold_v1.json"))["threshold"]
 
-    test = build_engineered_features(load_split("test"))
+    test = load_split("test")
     test = test.copy()
     test["raw_score"] = model.predict_proba(test[features])[:, 1]
     test["prediction"] = (test["raw_score"] >= threshold).astype(int)

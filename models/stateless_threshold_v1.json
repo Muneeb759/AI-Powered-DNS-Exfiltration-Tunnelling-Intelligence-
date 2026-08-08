@@ -1,0 +1,5 @@
+{
+  "threshold": 0.7262068048695854,
+  "operating_fpr_target": 0.001,
+  "model_version": "stateless_lgbm_v1"
+}
