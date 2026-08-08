@@ -46,13 +46,25 @@ that's still coming. `split_status` in `results/metrics/split_summary.json` shou
    recall specifically (`test` light positives, 3,479 rows, sit entirely in one capture trace — see
    `summary.md`).
 
-7. **Track 2 cascade (stretch, not blocking).** Gracefully-degraded design agreed with Muneeb: Stage 1
-   row-level stateless model (above) always runs; escalate to a capture-level pooled stateful-context
-   Stage 2 when a capture's suspicious-row ratio exceeds a validation-tuned threshold δ. Report % of rows
-   escalated, one-stage vs two-stage recall/latency, and an honest limitation note that Stage 2 operates
-   at capture granularity (finest available in the supplied stateful table — confirmed no reliable
-   row-level or sub-file positional alignment exists between the stateless/stateful tables). Build only
-   after items 2–6 are done and verified.
+7. **Track 2 cascade (stretch, not blocking). DONE.**
+   `src/features/stateful_context.py` (pooled per-capture stateful features, C1-C5 corrections from
+   `PHASE1_AUDIT.md` finally implemented) + `src/models/cascade.py`. Stage 1 = existing stateless
+   model; escalation trigger = fraction of a session's rows above the paper's own "suspicious" score
+   band (>=0.4) exceeding a val_thr-tuned δ (0.5) — NOT the FPR=0.1% alert threshold, which was too
+   strict to ever trigger escalation. Stage 2 = transparent majority-vote over the top-3 stateful
+   features by train-set benign/attack mean gap (`sf_ttl_mean`, `sf_rr_name_length`,
+   `sf_ttl_variance`) — no ML classifier fit at capture level; only 3 benign captures exist in train,
+   too few for that to be honest. Graceful fallback to Stage-1-only implemented for missing context.
+
+   **Result on test:** both attack sessions escalate and are confirmed (100% recall, up from ~0.2%
+   Stage-1-only recall at the same FPR), FPR unchanged (7.6/10k), 38.9% of rows escalated to the
+   expensive path (61.1% stay on the cheap path). **Two flagged limitations, not hidden behind the
+   number:** (1) all 18 capture files in this dataset are single-composition — verified, none mix
+   benign+attack rows — so blanket-alerting a confirmed session's rows is a testbed-shaped win, not
+   one a mixed real-world session would give; ties directly to the brief's own controlled-environment
+   caveat. (2) test has only 3 sessions and delta was tuned on val_thr's 3 sessions — real result, not
+   test leakage, but not a statistically powerful session-level claim. The row-level Stage 1 numbers
+   remain the primary, statistically meaningful headline metric.
 
 ## Exit criterion
 
