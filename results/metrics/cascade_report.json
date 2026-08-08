@@ -82,30 +82,30 @@
     }
   },
   "one_stage_stage1_only": {
-    "tp": 90,
-    "fp": 47,
-    "fn": 39184,
-    "tn": 61520,
-    "recall": 0.00229159240209808,
-    "fpr": 0.0007633959751165398,
-    "precision": 0.656934306569343,
-    "false_alerts_per_10k_benign": 7.633959751165397
+    "tp": 38179,
+    "fp": 0,
+    "fn": 1095,
+    "tn": 61567,
+    "recall": 0.9721189591078067,
+    "fpr": 0.0,
+    "precision": 1.0,
+    "false_alerts_per_10k_benign": 0.0
   },
   "two_stage_cascade": {
     "tp": 39274,
-    "fp": 47,
+    "fp": 0,
     "fn": 0,
-    "tn": 61520,
+    "tn": 61567,
     "recall": 1.0,
-    "fpr": 0.0007633959751165398,
-    "precision": 0.9988047099514255,
-    "false_alerts_per_10k_benign": 7.633959751165397
+    "fpr": 0.0,
+    "precision": 1.0,
+    "false_alerts_per_10k_benign": 0.0
   },
   "light_only": {
     "one_stage": {
-      "tp": 8,
-      "fn": 3471,
-      "recall": 0.0022995113538373095
+      "tp": 3389,
+      "fn": 90,
+      "recall": 0.9741304972693303
     },
     "two_stage": {
       "tp": 3479,
@@ -115,9 +115,9 @@
   },
   "heavy_only": {
     "one_stage": {
-      "tp": 82,
-      "fn": 35713,
-      "recall": 0.00229082274060623
+      "tp": 34790,
+      "fn": 1005,
+      "recall": 0.9719234529962285
     },
     "two_stage": {
       "tp": 35795,

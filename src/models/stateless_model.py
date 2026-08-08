@@ -14,26 +14,35 @@ if str(project_root) not in sys.path:
 
 from src.data.load import load_split, get_schema_lock
 from src.eval.metrics import pick_threshold_at_fpr, point_metrics, ranking_metrics, bootstrap_ci, recall_at_fpr_curve
+from src.features.stateless_engineered import build_engineered_features, ENGINEERED_FEATURES
 
 OPERATING_FPR = 0.001
 SEED = 20260808
-MODEL_VERSION = "stateless_lgbm_v1"
+MODEL_VERSION = "stateless_lgbm_v2"
 
 
 def train_stateless_model():
     schema = get_schema_lock()
-    features = schema["stateless_features"]
+    base_features = schema["stateless_features"]
+    features = base_features + ENGINEERED_FEATURES
 
-    train = load_split("train")
-    val_cal = load_split("val_cal")
-    val_thr = load_split("val_thr")
-    test = load_split("test")
+    train = build_engineered_features(load_split("train"))
+    val_cal = build_engineered_features(load_split("val_cal"))
+    val_thr = build_engineered_features(load_split("val_thr"))
+    test = build_engineered_features(load_split("test"))
+
+    # scale_pos_weight corrects for class imbalance: penalises missing an attack row
+    # proportionally to how rare attacks are in the training set.
+    n_neg = int((train["label"] == 0).sum())
+    n_pos = int((train["label"] == 1).sum())
+    spw = n_neg / n_pos
 
     model = lgb.LGBMClassifier(
         objective="binary",
         n_estimators=300,
         num_leaves=31,
         learning_rate=0.05,
+        scale_pos_weight=spw,
         random_state=SEED,
         deterministic=True,
         force_row_wise=True,
@@ -69,8 +78,11 @@ def train_stateless_model():
     test["prediction"] = (raw_test >= threshold).astype(int)
 
     report = build_report(test, threshold)
+    report["feature_set"] = {"base": base_features, "engineered": ENGINEERED_FEATURES,
+                             "total": len(features)}
+    report["scale_pos_weight"] = round(spw, 4)
 
-    _save_artifacts(model, calibrator, threshold, test, report)
+    _save_artifacts(model, calibrator, threshold, test, report, features)
     print(json.dumps({k: v for k, v in report.items() if k != "light_recall_bootstrap_ci"}, indent=2))
     print("light_recall_bootstrap_ci:", report["light_recall_bootstrap_ci"])
     return report
@@ -132,10 +144,12 @@ def build_report(test: pd.DataFrame, threshold: float) -> dict:
     }
 
 
-def _save_artifacts(model, calibrator, threshold: float, test: pd.DataFrame, report: dict):
+def _save_artifacts(model, calibrator, threshold: float, test: pd.DataFrame, report: dict,
+                    features: list):
     models_dir = Path("models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": model, "calibrator": calibrator, "model_version": MODEL_VERSION},
+    joblib.dump({"model": model, "calibrator": calibrator, "model_version": MODEL_VERSION,
+                 "features": features},
                 models_dir / "stateless_lgbm.pkl")
     with open(models_dir / "stateless_threshold.json", "w") as f:
         json.dump({"threshold": threshold, "operating_fpr_target": OPERATING_FPR,
