@@ -1,0 +1,10 @@
+{
+  "n_rows": 726810,
+  "runs_seconds": [
+    16.16,
+    14.824,
+    13.745
+  ],
+  "mean_seconds": 14.91,
+  "per_row_amortized_us": 20.5139
+}

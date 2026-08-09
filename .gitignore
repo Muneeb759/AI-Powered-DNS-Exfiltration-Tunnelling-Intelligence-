@@ -24,3 +24,6 @@ Thumbs.db
 
 # Pipeline prediction outputs — superseded by results/bundle/ (the submitted deliverable)
 results/predictions/
+
+# Local agent/session config (not part of the submission)
+.claude/

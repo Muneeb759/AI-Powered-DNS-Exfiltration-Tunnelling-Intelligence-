@@ -114,6 +114,36 @@ def calibration_report(test: pd.DataFrame, n_bins: int = 10) -> dict:
     }
 
 
+def confusion_matrices(test: pd.DataFrame, threshold: float) -> dict:
+    """2x2 confusion matrix at the headline threshold, combined and per attack slice.
+    Brief requirement: "a confusion matrix and false alerts per 10,000 benign decisions."
+    Written to an artifact so the report table is traceable rather than typed in."""
+    y = test["label"].values
+    s = test["raw_score"].values
+
+    def _cm(mask) -> dict:
+        pm = point_metrics(y[mask], s[mask], threshold=threshold)
+        return {
+            "true_positive": pm["tp"], "false_negative": pm["fn"],
+            "false_positive": pm["fp"], "true_negative": pm["tn"],
+            "recall": pm["recall"], "precision": pm["precision"], "fpr": pm["fpr"],
+            "false_alerts_per_10k_benign": pm["false_alerts_per_10k_benign"],
+            "n_actual_attack": int((y[mask] == 1).sum()),
+            "n_actual_benign": int((y[mask] == 0).sum()),
+        }
+
+    all_mask = np.ones(len(y), dtype=bool)
+    cats = test["attack_category"].values
+    return {
+        "threshold": float(threshold),
+        "combined": _cm(all_mask),
+        "light": _cm((y == 0) | (cats == "light")),
+        "heavy": _cm((y == 0) | (cats == "heavy")),
+        "note": ("Light/heavy slices pair that attack category against the FULL benign population, "
+                 "so FPR is meaningful; a category slice has no benign rows of its own."),
+    }
+
+
 def run_operating_points() -> dict:
     bundle = joblib.load("models/stateless_lgbm_v1.pkl")
     model, features, calibrator = bundle["model"], bundle["features"], bundle["calibrator"]
@@ -147,6 +177,8 @@ def run_operating_points() -> dict:
         ),
         "achievable_operating_points": curve,
         "unreachable_fpr_bands": gaps,
+        "confusion_matrix_at_headline_threshold": confusion_matrices(
+            test, json.load(open("models/stateless_threshold_v1.json"))["threshold"]),
         "calibration": calibration_report(test),
     }
 

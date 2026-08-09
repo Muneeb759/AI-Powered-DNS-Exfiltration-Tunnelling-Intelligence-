@@ -175,18 +175,24 @@ real exfiltration would be, and that narrowness shows up even in a two-variable 
 
 ### 6b. Honest comparison: what the ML model actually buys over the rule
 
-The brief requires showing *"measurable value beyond a conventional rule or threshold."* Placed
-side by side at the tight operating point:
+The brief requires showing *"measurable value beyond a conventional rule or threshold."* Compared
+first at the **tight FPR=0.1% point** — note this is the model's *alternate* operating point, not
+its §7 headline; it is used here because it is where the rule baseline's own threshold was selected,
+so the two are compared on equal terms:
 
-| | PR-AUC | Recall @ tight point | Precision |
+| | PR-AUC | Recall @ tight point (FPR=0.1%) | Precision |
 |---|---|---|---|
 | Rule baseline | 0.523 | 0.229% | **73.2%** |
 | v1 ML model | **0.627** | 0.229% | 64.3% |
 
-**At the tight operating point the rule baseline has higher precision than the model at identical
-recall.** The model's advantage is concentrated in *ranking quality* (PR-AUC 0.523 → 0.627
-combined; 0.091 → 0.128 on light attacks), not at that operating point. We report this rather than
-selecting a comparison that flatters the model.
+**At that tight point the rule baseline has higher precision than the model at identical recall.**
+The model's advantage is concentrated in *ranking quality* (PR-AUC 0.523 → 0.627 combined;
+0.091 → 0.128 on light attacks), not at that operating point. We report this rather than selecting
+a comparison that flatters the model.
+
+At the model's actual **headline** operating point (threshold 0.713607, 4.12% test FPR) it reaches
+10.78% recall at 62.6% precision — a regime the rule baseline cannot match at comparable FPR (see
+the next paragraph).
 
 **Where the model is genuinely ahead, measured rather than asserted:** ranking quality across the
 whole score range (ROC-AUC 0.810 vs 0.700; PR-AUC 0.627 vs 0.523), and recall at a comparable
@@ -266,8 +272,35 @@ looks better in a report.
 | | PR-AUC | Recall @ 4.12% FPR | Precision | False alerts / 10k benign |
 |---|---|---|---|---|
 | Combined | **0.6269** | 10.78% | 62.6% | 411.7 |
-| Light | 0.1283 | 10.64% | — | 411.7 |
-| Heavy | 0.6052 | 10.80% | — | 411.7 |
+| Light | 0.1283 | 10.64% | 12.7% | 411.7 |
+| Heavy | 0.6052 | 10.80% | 60.4% | 411.7 |
+
+### Confusion matrix at the headline operating point
+
+Brief requirement: *"a confusion matrix and false alerts per 10,000 benign decisions."* Generated
+by `src/eval/operating_points.py` into
+`results/metrics/operating_points_v1.json:confusion_matrix_at_headline_threshold` — not typed in.
+
+**Combined** (threshold 0.713607; 39,274 attack rows, 61,567 benign rows):
+
+| | predicted attack | predicted benign | total |
+|---|---|---|---|
+| **actual attack** | 4,235 (TP) | 35,039 (FN) | 39,274 |
+| **actual benign** | 2,535 (FP) | 59,032 (TN) | 61,567 |
+
+**411.7 false alerts per 10,000 benign decisions.**
+
+Per attack slice — each pairs that category against the *full* benign population, so FPR stays
+meaningful (a category slice has no benign rows of its own):
+
+| Slice | TP | FN | FP | TN | Recall | Precision | False alerts / 10k benign |
+|---|---|---|---|---|---|---|---|
+| Light | 370 | 3,109 | 2,535 | 59,032 | 10.64% | 12.7% | 411.7 |
+| Heavy | 3,865 | 31,930 | 2,535 | 59,032 | 10.80% | 60.4% | 411.7 |
+
+The light slice's 12.7% precision is the sharpest single statement of the light-attack problem in
+this report: at the same threshold and the same false-alert budget, roughly seven of every eight
+light-attack alerts are wrong, because only 3,479 light rows exist against 61,567 benign ones.
 
 Light and heavy recall track each other closely but are not identical (10.64% vs 10.80% here;
 46.22% vs 47.14% post-cliff) — heavy is consistently marginally higher at every operating point,
@@ -303,6 +336,13 @@ in-sample per fold (documented small-N simplification — only 18 sessions total
 | 2020-11-22 | 131,098 | 69,531 | benign, light, heavy | 0.748 | 0.21% |
 | 2020-11-23 | 99,060 | 49,945 | benign, heavy | 0.715 | 0.32% |
 | 2020-11-24 | 186,794 | 115,782 | benign, heavy | 0.800 | 0.25% |
+
+**This is what satisfies the brief's *"confidence intervals **or** fold-to-fold variation where the
+split permits"* requirement — the second limb.** We report fold-to-fold variation across the four
+testable LOTO folds rather than confidence intervals, because the CI route is degenerate on this
+data: all 3,479 light-attack test rows sit in a single capture, so a session-clustered bootstrap
+has exactly one cluster to resample and returns a zero-width interval that would overstate
+precision rather than convey uncertainty (§7). The spread below is the honest uncertainty estimate.
 
 Fold-to-fold PR-AUC: mean 0.652, std 0.180, range 0.345–0.800. **The light-attack-only day is the
 weakest fold by a wide margin** — concrete, measured evidence that light-attack detection is the
@@ -442,13 +482,17 @@ deliberately not a fitted ML classifier, since only 3 benign captures exist in t
 
 | | One-stage (Stage 1 v1 only) | Two-stage (cascade) |
 |---|---|---|
-| Recall (combined) | 0.229% | 100% |
-| FPR | 0.081% | 0.081% (unchanged) |
-| Precision | 64.3% | 99.9% |
-| Light recall | 0.230% | 100% |
-| Heavy recall | 0.229% | 100% |
+| Recall (combined) | 10.78% | 100% |
+| FPR | 4.12% | 4.12% (unchanged) |
+| Precision | 62.6% | 93.9% |
+| Light recall | 10.64% | 100% |
+| Heavy recall | 10.80% | 100% |
 | **Sessions escalated** | — | **2 of 3 test sessions (66.7%)** |
 | **Test sessions total** | — | **3 (2 attack, 1 benign)** |
+
+Both columns are at the §7 headline threshold (0.713607). Stage 2 leaves FPR unchanged because the
+single benign test session does not escalate; it raises precision from 62.6% to 93.9% by converting
+the 4,235 correctly-flagged rows into full-session coverage.
 
 **Escalation margins — how close the rule is to misfiring** (`cascade_report.json:escalation_margins`).
 The escalated-row percentage (38.9%) is unchanged from the rejected v2 model, which initially
@@ -472,7 +516,7 @@ does not move is exactly the kind of number that hides a change underneath it (�
 **We are not claiming this as a compute-saving cascade (§1).** Stage 2 costs ~165 μs per escalated
 session — negligible next to Stage 1's per-query cost — so there is no meaningful trade-off to
 report between recall and cost. What the cascade genuinely provides: a session flagged only
-weakly by Stage 1 (0.229% row-level recall) can still receive a *confirmed, explainable*
+weakly by Stage 1 (10.78% row-level recall) can still receive a *confirmed, explainable*
 session-level verdict from three named, human-checkable stateful features, rather than staying an
 unconfirmed weak signal. That is the value — interpretability and confirmation, not efficiency.
 
@@ -511,11 +555,49 @@ amortizing per-call inference overhead.
 **Window aggregation added cost** (§8): ~9.5 μs per 200-row window (≈0.05 μs/query amortized) —
 negligible next to Stage 1's inference cost.
 
+### Timings including and excluding feature extraction
+
+Brief requirement: *"timings both including and excluding feature extraction or enrichment."*
+
+**This submission performs no per-query feature extraction, and we state that plainly rather than
+report a number that does not exist.** CIC-Bell-DNS-EXF-2021 ships *pre-computed* stateless feature
+tables; the 14 gated features are read from those CSVs, with only two trivial derivations
+(`sl_longest_word_len`, a string length; `sl_numeric_ratio`, a division). All of it happens once at
+load time in `src/data/load.py`, not per query.
+
+| | Mean | Median | p95 |
+|---|---|---|---|
+| Inference only, batch=1 | 2,225.5 μs/query | 2,218.9 μs/query | 2,748.4 μs/query |
+| Inference + per-query array prep, batch=1 | 2,228.4 μs/query | 2,221.7 μs/query | 2,751.3 μs/query |
+| Inference only, batch=128 | 19.4 μs/query | 19.2 μs/query | 25.4 μs/query |
+| Inference + per-query array prep, batch=128 | 22.3 μs/query | 21.9 μs/query | 28.3 μs/query |
+
+The difference between the two rows in each pair is **2.9 μs/query** (median 2.7, p95 2.9) — but
+that is only the `float32` array cast, which we report honestly as array preparation, **not** as
+feature extraction.
+
+**The real extraction cost, measured** (`results/metrics/extraction_cost.json`): parsing all 36
+CSVs and deriving the 14 features for 726,810 rows takes **14.91 s** (3 runs: 13.75–16.16 s), which
+amortizes to **20.5 μs/query**. Paid once per corpus load, not per query.
+
+**What this does not measure, and we will not invent:** a production deployment would parse raw DNS
+packets off the wire and compute these 14 features per query. That cost is real and is *not*
+represented anywhere in these numbers, because this dataset supplies no PCAPs
+(`provenance.json:has_pcaps: false`) — so we have nothing to measure it against. Any per-query
+extraction figure we quoted for a production pipeline would be fabricated.
+
 ## 12. Failure analysis
 
-`src/eval/failure_analysis.py`, v1 model, threshold 0.7262. Full detail in
-`results/metrics/failure_analysis.json`. At this threshold, v1 has 39,184 false negatives and 50
-false positives on test (matches §7's confusion matrix at the FPR≈4.1% headline point).
+`src/eval/failure_analysis.py`, v1 model, at the **headline threshold 0.713607** (§7). Full detail
+in `results/metrics/failure_analysis.json`. At this operating point v1 has **35,039 false negatives
+and 2,535 false positives** on test — matching §7's confusion matrix exactly.
+
+> **Correction from an earlier draft.** This section previously reported 39,184 FN / 50 FP, which
+> were the counts at the *abandoned* FPR=0.1% threshold (0.7262) rather than the headline point.
+> The model artifact used by the prototype was also still pinned to that threshold, so the product
+> was operating at 0.229% recall while the report claimed 10.78%. Both are now fixed and the
+> threshold record (`models/stateless_threshold_v1.json`) carries the achieved val_thr FPR and
+> selection rule so the two cannot silently diverge again.
 
 **Worst 5 false negatives** (lowest raw score among missed attack rows):
 
@@ -549,13 +631,22 @@ working correctly in general but producing false alarms on the benign queries th
 upper tail — a real, expected precision/recall trade-off at this operating point, not a distinct
 bug.
 
+**Note on the worst-5 tables after the threshold correction.** Both tables are unchanged from the
+earlier (0.7262) draft, and that is expected rather than an oversight: the worst-5 FNs are the
+*lowest-scoring* attack rows (scores 0.00001–0.056), far below either threshold, and the worst-5
+FPs are the *highest-scoring* benign rows (0.815–0.879), above both. Moving the threshold changes
+the size of each population — false positives grew from 50 to 2,535 — but not its extreme tail.
+Both pattern claims above were re-checked against the regenerated artifact rather than carried
+over: the FN rows remain short (`sl_len` 6–13) with entropy 2.03–3.11, and the FP rows remain long
+and high-entropy.
+
 ## 13. Track 3 support: analyst case view (`app/streamlit_app.py`)
 
 Declared primary track remains Track 1 (§1). This is a supporting Track 3 layer over the
 already-evaluated Stage 1 detector and cascade — no separate detector, baseline, or metric set of
 its own. It loads `models/stateless_lgbm_v1.pkl` and `results/metrics/stateless_model_v1_report.json`
 throughout — the rejected v2 bundle is never read — and this was verified by running the app and
-reading the rendered Model Card (PR-AUC 0.6269, threshold 0.7262), not by inspecting the source alone.
+reading the rendered Model Card (PR-AUC 0.6269, threshold 0.713607), not by inspecting the source alone.
 
 - **Case Queue tab:** risk-sorted triage queue, per-query SHAP reason codes, decision band, the
   row's cascade session status, and a disposition control (approve / dismiss / escalate) —

@@ -83,6 +83,21 @@ def score_and_check() -> None:
     if bundle["model_version"] != "stateless_lgbm_v1":
         _fail(f"expected stateless_lgbm_v1, found {bundle['model_version']}")
 
+    # The threshold artifact the PRODUCT uses must be the one the REPORT documents. These
+    # drifted apart once (the app ran at FPR=0.1%/0.229% recall while the report claimed
+    # 4.12%/10.78%), so verify agreement rather than trusting either in isolation.
+    thr_path = project_root / "models" / "stateless_threshold_v1.json"
+    if not thr_path.exists():
+        _fail("models/stateless_threshold_v1.json missing.")
+    thr_record = json.load(open(thr_path))
+    if abs(thr_record["threshold"] - HEADLINE_THRESHOLD) > 1e-12:
+        _fail(
+            f"threshold artifact disagrees with the reported headline operating point:\n"
+            f"    models/stateless_threshold_v1.json -> {thr_record['threshold']}\n"
+            f"    report/TECHNICAL_REPORT.md section 7 -> {HEADLINE_THRESHOLD}\n"
+            "  The product would run at a different operating point than the report claims."
+        )
+
     test = load_split("test")
     scores = bundle["model"].predict_proba(test[bundle["features"]])[:, 1]
     y = test["label"].values

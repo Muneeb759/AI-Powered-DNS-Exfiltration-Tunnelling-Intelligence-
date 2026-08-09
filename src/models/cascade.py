@@ -123,7 +123,8 @@ def run_cascade(model_name: str = "stateless_lgbm_v1") -> dict:
     bundle = joblib.load(f"models/{model_name}.pkl")
     model = bundle["model"]
     features = bundle.get("features") or get_schema_lock()["stateless_features"]
-    threshold_file = "models/stateless_threshold_v1.json" if model_name == "stateless_lgbm_v1" else "models/stateless_threshold.json"
+    threshold_file = ("models/stateless_threshold_v1.json" if model_name == "stateless_lgbm_v1"
+                      else "models/stateless_threshold_v2_rejected.json")
     stage1_threshold = json.load(open(threshold_file))["threshold"]
 
     needs_engineered = any(f.startswith("sl2_") for f in features)

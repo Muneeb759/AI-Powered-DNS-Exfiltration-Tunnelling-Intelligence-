@@ -1,5 +1,20 @@
 {
-  "threshold": 0.7262068048695854,
-  "operating_fpr_target": 0.001,
-  "model_version": "stateless_lgbm_v1"
+  "threshold": 0.713607050540105,
+  "operating_fpr_target": 0.045,
+  "achieved_val_thr_fpr": 0.04397848250999831,
+  "selected_on": "val_thr",
+  "selection_rule": "Most recall available below the 15-point score-quantization cliff: thresholds are enumerated from distinct val_thr benign score values, and this is the lowest (most recall-friendly) one whose val_thr FPR stays within the target. See report/TECHNICAL_REPORT.md section 7 and results/metrics/operating_points_v1.json:unreachable_fpr_bands.",
+  "model_version": "stateless_lgbm_v1",
+  "alternate_operating_points": {
+    "tight_fpr_0.1pct": {
+      "threshold": 0.7262068048695854,
+      "fpr_target": 0.001,
+      "achieved_val_thr_fpr": 0.0007181884751872923
+    },
+    "post_cliff": {
+      "threshold": 0.7124161589841883,
+      "fpr_target": 0.1942,
+      "achieved_val_thr_fpr": 0.1941784487128936
+    }
+  }
 }

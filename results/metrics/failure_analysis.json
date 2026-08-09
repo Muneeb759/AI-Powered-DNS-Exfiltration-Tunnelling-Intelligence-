@@ -1,14 +1,14 @@
 {
-  "threshold": 0.7262068048695854,
-  "n_false_negatives": 39184,
-  "n_false_positives": 50,
+  "threshold": 0.713607050540105,
+  "n_false_negatives": 35039,
+  "n_false_positives": 2535,
   "worst_false_negatives": [
     {
       "unit_id": "Attack_Light_Benign/Attacks/stateless_features-light_text.pcap.csv_3245",
       "session_id": "Attack_Light_Benign/Attacks/stateless_features-light_text.pcap.csv::2020-11-22",
       "attack_category": "light",
       "raw_score": 5.732314435130818e-06,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 17.0,
         "sl_subdomain_length": 3.0,
@@ -31,7 +31,7 @@
       "session_id": "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv::2020-11-22",
       "attack_category": "heavy",
       "raw_score": 7.056640010639038e-06,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 10.0,
         "sl_subdomain_length": 1.0,
@@ -54,7 +54,7 @@
       "session_id": "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv::2020-11-22",
       "attack_category": "heavy",
       "raw_score": 0.00018091934328231157,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 16.0,
         "sl_subdomain_length": 9.0,
@@ -77,7 +77,7 @@
       "session_id": "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv::2020-11-22",
       "attack_category": "heavy",
       "raw_score": 0.00018091934328231157,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 16.0,
         "sl_subdomain_length": 9.0,
@@ -100,7 +100,7 @@
       "session_id": "Attack_heavy_Benign/Attacks/stateless_features-heavy_audio.pcap.csv::2020-11-22",
       "attack_category": "heavy",
       "raw_score": 0.056469949339265434,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 12.0,
         "sl_subdomain_length": 3.0,
@@ -119,14 +119,14 @@
       }
     }
   ],
-  "false_positive_note": "50 actual false positives at threshold 0.7262 -- shown below.",
+  "false_positive_note": "2535 actual false positives at threshold 0.7136 -- shown below.",
   "false_positive_examples_or_near_misses": [
     {
       "unit_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv_15389",
       "session_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
       "attack_category": "benign",
       "raw_score": 0.878722859734777,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 18.0,
         "sl_subdomain_length": 4.0,
@@ -149,7 +149,7 @@
       "session_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
       "attack_category": "benign",
       "raw_score": 0.8676205366105362,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 31.0,
         "sl_subdomain_length": 17.0,
@@ -172,7 +172,7 @@
       "session_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
       "attack_category": "benign",
       "raw_score": 0.8676205366105362,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 31.0,
         "sl_subdomain_length": 17.0,
@@ -195,7 +195,7 @@
       "session_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
       "attack_category": "benign",
       "raw_score": 0.8676205366105362,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 31.0,
         "sl_subdomain_length": 17.0,
@@ -218,7 +218,7 @@
       "session_id": "Attack_heavy_Benign/Benign/stateless_features-benign_heavy_1.pcap.csv::2020-11-22",
       "attack_category": "benign",
       "raw_score": 0.8146340335857906,
-      "threshold": 0.7262068048695854,
+      "threshold": 0.713607050540105,
       "features": {
         "sl_fqdn_count": 23.0,
         "sl_subdomain_length": 5.0,

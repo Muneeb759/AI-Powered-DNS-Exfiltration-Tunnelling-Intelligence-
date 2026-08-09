@@ -16,7 +16,24 @@ from src.data.load import load_split, get_schema_lock
 from src.eval.metrics import pick_threshold_at_fpr, point_metrics, ranking_metrics, bootstrap_ci, recall_at_fpr_curve
 from src.features.stateless_engineered import build_engineered_features, ENGINEERED_FEATURES
 
-OPERATING_FPR = 0.001
+# Headline operating point target. NOT 0.1%: this model's benign score distribution is heavily
+# quantized (71,012 val_thr benign rows -> 4,289 distinct scores), leaving a 15-point FPR band
+# unreachable at any threshold (report section 7, results/metrics/operating_points_v1.json).
+# 0.045 resolves to threshold 0.713607..., the most recall available BELOW that cliff
+# (val_thr FPR 4.398%, test FPR 4.12%, recall 10.78%). The former 0.001 target resolved to
+# 0.726207 / 0.229% recall -- retained in the threshold artifact as an alternate operating
+# point, but it is not the reported headline.
+OPERATING_FPR = 0.045
+
+# Alternate operating points reported alongside the headline (report section 7). Recorded in the
+# threshold artifact so the product and the report cannot silently diverge on which point is live.
+ALTERNATE_FPR_TARGETS = {
+    "tight_fpr_0.1pct": 0.001,   # -> 0.726207, 0.229% recall; abandoned as headline
+    # 0.1942, not 0.20: targets above ~0.1943 walk PAST the first post-cliff point to lower
+    # thresholds still inside budget, landing on 0.709489 instead of the 0.712416 the report
+    # and results bundle use. Verified: 0.1942/0.1943 -> 0.712416; 0.195 -> 0.712261.
+    "post_cliff": 0.1942,        # -> 0.712416, 47.06% recall at 17.95% test FPR
+}
 SEED = 20260808
 
 
@@ -75,7 +92,21 @@ def train_stateless_model(use_engineered: bool = True):
 
     # Threshold selection on val_thr ONLY, using the raw (uncalibrated) score
     raw_val_thr = model.predict_proba(val_thr[features])[:, 1]
-    threshold = pick_threshold_at_fpr(val_thr["label"].values, raw_val_thr, target_fpr=OPERATING_FPR)
+    y_val_thr = val_thr["label"].values
+    threshold = pick_threshold_at_fpr(y_val_thr, raw_val_thr, target_fpr=OPERATING_FPR)
+
+    # Achieved val_thr FPR at the selected threshold, and the alternate points, recorded so the
+    # threshold artifact is auditable rather than a bare number.
+    neg_val_thr = raw_val_thr[y_val_thr == 0]
+    achieved_val_fpr = float((neg_val_thr >= threshold).mean())
+    alternates = {}
+    for name, target in ALTERNATE_FPR_TARGETS.items():
+        alt_thr = pick_threshold_at_fpr(y_val_thr, raw_val_thr, target_fpr=target)
+        alternates[name] = {
+            "threshold": float(alt_thr),
+            "fpr_target": target,
+            "achieved_val_thr_fpr": float((neg_val_thr >= alt_thr).mean()),
+        }
 
     # Score test (held out, untouched until now)
     raw_test = model.predict_proba(test[features])[:, 1]
@@ -91,7 +122,8 @@ def train_stateless_model(use_engineered: bool = True):
                              "total": len(features)}
     report["scale_pos_weight"] = round(spw, 4)
 
-    _save_artifacts(model, calibrator, threshold, test, report, features, model_version, suffix)
+    _save_artifacts(model, calibrator, threshold, test, report, features, model_version, suffix,
+                    achieved_val_fpr=achieved_val_fpr, alternates=alternates)
     print(json.dumps({k: v for k, v in report.items() if k != "light_recall_bootstrap_ci"}, indent=2))
     print("light_recall_bootstrap_ci:", report["light_recall_bootstrap_ci"])
     return report
@@ -154,15 +186,29 @@ def build_report(test: pd.DataFrame, threshold: float, model_version: str = "sta
 
 
 def _save_artifacts(model, calibrator, threshold: float, test: pd.DataFrame, report: dict,
-                    features: list, model_version: str, suffix: str = ""):
+                    features: list, model_version: str, suffix: str = "",
+                    achieved_val_fpr: float = None, alternates: dict = None):
     models_dir = Path("models")
     models_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump({"model": model, "calibrator": calibrator, "model_version": model_version,
                  "features": features},
                 models_dir / f"stateless_lgbm{suffix}.pkl")
     with open(models_dir / f"stateless_threshold{suffix}.json", "w") as f:
-        json.dump({"threshold": threshold, "operating_fpr_target": OPERATING_FPR,
-                   "model_version": model_version}, f, indent=2)
+        json.dump({
+            "threshold": threshold,
+            "operating_fpr_target": OPERATING_FPR,
+            "achieved_val_thr_fpr": achieved_val_fpr,
+            "selected_on": "val_thr",
+            "selection_rule": (
+                "Most recall available below the 15-point score-quantization cliff: thresholds "
+                "are enumerated from distinct val_thr benign score values, and this is the lowest "
+                "(most recall-friendly) one whose val_thr FPR stays within the target. See "
+                "report/TECHNICAL_REPORT.md section 7 and "
+                "results/metrics/operating_points_v1.json:unreachable_fpr_bands."
+            ),
+            "model_version": model_version,
+            "alternate_operating_points": alternates or {},
+        }, f, indent=2)
 
     pred_dir = Path("results/predictions")
     pred_dir.mkdir(parents=True, exist_ok=True)
