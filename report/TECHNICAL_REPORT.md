@@ -447,8 +447,9 @@ session escalates and is confirmed, because every row in a pure-attack session i
 an attack row. That 100% is not evidence the confirmation logic works on partially-attack traffic
 — it is evidence the dataset has no partially-attack sessions to test it against. We keep the
 cascade (it is genuinely useful as an interpretable escalation-and-confirmation step, §10) but do
-not present its 100% recall as proof of anything beyond "it worked on the exact sessions available,
-n=3."
+not present its 100% recall — or the 93.9% precision that comes with it — as proof of anything
+beyond "it worked on the exact sessions available, n=3." Both figures are products of the same
+construction, and §10's table now carries that caveat inline rather than adjacent to it.
 
 **Experiment 3 — window-level alerting (§8, reported, not adopted).** Same mechanism: a window's
 label is "contains any attack row," which on single-composition captures is nearly identical to
@@ -480,19 +481,31 @@ original paper's own "suspicious" band (raw score >= 0.4) exceeding delta=0.5 (t
 train-set benign/attack mean gap (`sf_ttl_mean`, `sf_rr_name_length`, `sf_ttl_variance`) —
 deliberately not a fitted ML classifier, since only 3 benign captures exist in train.
 
-| | One-stage (Stage 1 v1 only) | Two-stage (cascade) |
-|---|---|---|
-| Recall (combined) | 10.78% | 100% |
-| FPR | 4.12% | 4.12% (unchanged) |
-| Precision | 62.6% | 93.9% |
-| Light recall | 10.64% | 100% |
-| Heavy recall | 10.80% | 100% |
-| **Sessions escalated** | — | **2 of 3 test sessions (66.7%)** |
-| **Test sessions total** | — | **3 (2 attack, 1 benign)** |
+> ### ⚠️ Read the right-hand column with §9 in hand
+> **The two-stage numbers below are not a detection result. They are arithmetic.** Every capture
+> file in this dataset is single-composition (§3, §9), so once a session is confirmed, blanket-
+> alerting its rows is *guaranteed* to catch 100% of its attack rows — there are no benign rows in
+> an attack session to get wrong. 100% recall and 93.9% precision are what that construction
+> produces on this data; they are **not** evidence the confirmation logic works on mixed traffic,
+> because this dataset contains no mixed sessions to test it against. This is **Experiment 2 of
+> the three pure-composition artifacts catalogued in §9** — the same root cause that retired a
+> PR-AUC 0.99999 feature and a 45.7%-recall window rule.
 
-Both columns are at the §7 headline threshold (0.713607). Stage 2 leaves FPR unchanged because the
-single benign test session does not escalate; it raises precision from 62.6% to 93.9% by converting
-the 4,235 correctly-flagged rows into full-session coverage.
+| | One-stage (Stage 1 v1 only) | Two-stage (cascade) | How to read the two-stage column |
+|---|---|---|---|
+| Recall (combined) | 10.78% | 100% | **100% by construction** — pure-composition captures, n=2 attack sessions |
+| FPR | 4.12% | 4.12% (unchanged) | Unchanged only because the **single** benign test session didn't escalate (n=1) |
+| Precision | 62.6% | 93.9% | Same construction; would fall on any session mixing benign + attack rows |
+| Light recall | 10.64% | 100% | 100% by construction (one light session, pure) |
+| Heavy recall | 10.80% | 100% | 100% by construction (one heavy session, pure) |
+| **Sessions escalated** | — | **2 of 3 test sessions** | Session-level n, not row-level |
+| **Test sessions total** | — | **3 (2 attack, 1 benign)** | Every session-level claim here rests on n=3 |
+
+Both columns are at the §7 headline threshold (0.713607). **The statistically meaningful column is
+the left one** — 61,567 independent benign rows behind it, versus three correlated sessions behind
+the right one. Stage 2's genuine contribution is not the recall figure: it is that a session flagged
+only weakly at row level (10.78%) receives an *explainable* verdict from three named, human-checkable
+stateful features, with an explicit "unconfirmed → human review" state when they disagree.
 
 **Escalation margins — how close the rule is to misfiring** (`cascade_report.json:escalation_margins`).
 The escalated-row percentage (38.9%) is unchanged from the rejected v2 model, which initially

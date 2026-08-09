@@ -34,6 +34,20 @@ ALTERNATE_FPR_TARGETS = {
     # and results bundle use. Verified: 0.1942/0.1943 -> 0.712416; 0.195 -> 0.712261.
     "post_cliff": 0.1942,        # -> 0.712416, 47.06% recall at 17.95% test FPR
 }
+
+ALTERNATE_TARGET_NOTES = {
+    "tight_fpr_0.1pct": (
+        "The conventional 0.1% false-positive budget. Reported for comparability with the rule "
+        "baseline (section 6b), which selects its own threshold at this target. Not the headline: "
+        "it yields only 0.229% recall."
+    ),
+    "post_cliff": (
+        "0.1942 is not a tuned value: 19.42% is the first achievable val_thr FPR ABOVE the "
+        "quantization cliff (the next reachable point below it is 4.398%). Targets above ~0.1943 "
+        "walk past this point to lower thresholds still inside budget, which is why the target is "
+        "stated to 4 decimal places rather than rounded to 0.20."
+    ),
+}
 SEED = 20260808
 
 
@@ -106,6 +120,7 @@ def train_stateless_model(use_engineered: bool = True):
             "threshold": float(alt_thr),
             "fpr_target": target,
             "achieved_val_thr_fpr": float((neg_val_thr >= alt_thr).mean()),
+            "note": ALTERNATE_TARGET_NOTES.get(name, ""),
         }
 
     # Score test (held out, untouched until now)
@@ -202,9 +217,11 @@ def _save_artifacts(model, calibrator, threshold: float, test: pd.DataFrame, rep
             "selection_rule": (
                 "Most recall available below the 15-point score-quantization cliff: thresholds "
                 "are enumerated from distinct val_thr benign score values, and this is the lowest "
-                "(most recall-friendly) one whose val_thr FPR stays within the target. See "
-                "report/TECHNICAL_REPORT.md section 7 and "
-                "results/metrics/operating_points_v1.json:unreachable_fpr_bands."
+                "(most recall-friendly) one whose val_thr FPR stays within the target. The 0.045 "
+                "target is not a tuned value -- it is any target in (0.0440, 0.1942), because the "
+                "achievable val_thr FPRs jump straight from 4.398% to 19.418% with nothing in "
+                "between; 0.045 simply sits in that gap. See report/TECHNICAL_REPORT.md section 7 "
+                "and results/metrics/operating_points_v1.json:unreachable_fpr_bands."
             ),
             "model_version": model_version,
             "alternate_operating_points": alternates or {},
