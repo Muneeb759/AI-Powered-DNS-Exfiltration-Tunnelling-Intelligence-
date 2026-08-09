@@ -11,6 +11,18 @@ Each query packet is evaluated independently by the stateless detection stage.
 
 ## 2. Technical Justification & Cancellation of Track 2 Cascade
 
+> **⚠️ Later revised — read with `report/TECHNICAL_REPORT.md` §1 and §10.** The three findings
+> below are all correct and still stand. The *conclusion* drawn from them — cancelling Track 2 —
+> was reversed. Track 2 was reinstated, not as the compute-optimisation the brief describes (our
+> own latency measurements do not support that framing), but as an **interpretable session-level
+> confirmation layer** operating at capture-file granularity, which is exactly the coarsest join
+> the findings below permit. The row-level decision unit argued for in this document remains the
+> headline unit and was never displaced.
+>
+> Finding 2's resolution-floor argument is also why §10's session-level cascade numbers carry an
+> inline caveat: with only 3 test sessions, session-level FPR remains statistically weak, precisely
+> as predicted here.
+
 Track 2 (Stateful Cascade) was cancelled following the empirical findings of Stage A:
 
 1. **Absence of Row-Level Join [B1(d)]:**

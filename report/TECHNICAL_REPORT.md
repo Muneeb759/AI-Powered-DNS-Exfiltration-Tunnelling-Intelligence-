@@ -703,14 +703,26 @@ reading the rendered Model Card (PR-AUC 0.6269, threshold 0.713607), not by insp
 - No claim of generalization to unseen real-world exfiltration tooling, DGA traffic, or production
   DNS infrastructure — out of scope per the brief itself.
 
-## TODO before submission
+## 15. Deliverable status
 
-- [ ] Regenerate `results/metrics/failure_analysis.json` against v1 and update §12's table
-- [ ] Repoint `app/streamlit_app.py` to `models/stateless_lgbm_v1.pkl` and re-verify in browser
-- [ ] Demo script + rehearsal (benign / light / heavy cases, row score + SHAP, window-level alert
-      on a light case, uncertainty state, metrics table, close on §9's rejected-approach story,
-      limitations slide)
-- [ ] Results Bundle deliverable (test-ID predictions, scoring output, threshold selection record,
-      model/config version)
-- [ ] Data & Model Statement deliverable (snapshot version + SHA-256, no external services)
-- [ ] Fresh-clone reproducibility check (single command reproduces the v1 headline score)
+| Brief deliverable | Status | Location |
+|---|---|---|
+| 1. Working prototype (benign / light / heavy) | Done, verified in browser | `app/streamlit_app.py` |
+| 2. Source & reproducibility package | Done | `requirements.txt`, `scripts/reproduce.py` (asserts against §7, exits non-zero on mismatch) |
+| 3. Technical report | This document | `report/TECHNICAL_REPORT.md` |
+| 4. Results bundle | Done | `results/bundle/` — predictions keyed on `unit_id`, scoring output, threshold record, manifest |
+| 5. Data & model statement | Done, incl. LLM-assistance disclosure | `deliverables/DATA_AND_MODEL_STATEMENT.md` |
+| 6. Pitch & demo | **Outstanding** | §9 is the intended narrative spine |
+
+**Verification run before submission:** `pytest` 8/8 green; `python scripts/reproduce.py` passes
+with all seven headline metrics matching this document; all 19 numeric claims in this report were
+cross-checked against their source files under `results/metrics/`; all 17 project modules import
+cleanly; the Streamlit app was launched and its displayed threshold, FPR and recall confirmed equal
+to §7.
+
+**One check we could not complete, stated rather than implied:** an end-to-end install on a bare
+machine (fresh clone → fresh venv → `pip install` → reproduce). Two attempts failed at
+`ReadTimeoutError` against `files.pythonhosted.org` — a network limitation of the development
+machine, not a repository defect. Structural clean-room checks did pass: a fresh clone contains
+every required file, the model artifact is tracked (not git-ignored), and the documented data tree
+matches disk. The unverified link is only whether `pip` can download eight standard PyPI packages.

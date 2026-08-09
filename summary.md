@@ -1,9 +1,30 @@
 # PHASE 1 SUMMARY & HANDOFF CONTRACT — CIC-Bell-DNS-EXF-2021
 
+> # ⚠️ HISTORICAL DOCUMENT — SUPERSEDED. NOT A SUBMISSION DELIVERABLE.
+>
+> This was the internal Phase 1 → Phase 2 handoff contract, written before any modelling was done.
+> It is retained as a record of how the data contract was established, **not** as a statement of
+> current results. Several figures and decisions below were later revised. For anything current,
+> read [`report/TECHNICAL_REPORT.md`](report/TECHNICAL_REPORT.md).
+>
+> **Specifically superseded:**
+>
+> | This document says | Current position |
+> |---|---|
+> | "Track 2 (Stateful Cascade) **was cancelled**" | Reinstated as a *supporting interpretability layer* — see report §1 and §10. The join-key finding that motivated cancelling it was correct; the conclusion was revised. |
+> | Target operating point **FPR = 0.1%** | Headline is now **threshold 0.713607 → 4.12% test FPR, 10.78% recall** (report §7). FPR=0.1% is retained only as a documented *alternate* point. |
+> | Leakage ablation **0.6265 / 0.6928**, delta +0.0663 | **0.6349 / 0.6946**, delta +0.0597 (`results/metrics/leakage_ablation.json`, regenerated after Phase 1 fixes). |
+> | Latency **4.20 μs extraction / 435.3 QPS** | Re-measured with median/p95 distributions and a declared environment — report §11. |
+> | `pytest` **6/6** | **8/8** (added leakage-gate and `unit_id` traceability regression tests). |
+> | "Mandatory Bootstrap 95% CI" for light recall | Attempted and found **degenerate** — all light test rows sit in one capture, so the session-clustered bootstrap has one cluster and returns a zero-width interval. Fold-to-fold LOTO variation is reported instead (report §7b). |
+>
+> The directory inventory in §5 below is also from Phase 1 and predates roughly fifteen files added
+> since. Section 6's git commands were internal handoff instructions and are not submission steps.
+
 > **Project:** Sofstica AI Hackathon — *AI-Powered DNS Exfiltration & Tunnelling Intelligence*  
 > **Phase:** Phase 1 (Data Engineering, Splits, Leakage Audit, Latency Harness)  
-> **Status:** 100% COMPLETE & VERIFIED (`handoff_check.py` EXIT 0, `pytest` 6/6 GREEN)  
-> **Track Selection:** Track 1 — Stateless-Only Detection, Row-Level Decision Unit  
+> **Status at time of writing:** Phase 1 complete (`handoff_check.py` EXIT 0, `pytest` 6/6 GREEN)  
+> **Track Selection at time of writing:** Track 1 — Stateless-Only Detection, Row-Level Decision Unit  
 > **Dataset Release:** Public UNB Release of CIC-Bell-DNS-EXF-2021  
 
 ---
